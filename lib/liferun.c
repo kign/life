@@ -3,6 +3,9 @@
 
 #include "lifestep.h"
 
+#define OCCUPIED(x)       ((x) == 1)
+#define EMPTY(x)          ((x) != 1)
+
 void life_run (
 	unsigned char * cells,
 	unsigned int X,
@@ -39,5 +42,5 @@ void life_run (
    }
 
    for (int i = 0; i < X * Y; i ++)
-      cells[i] = f1[i] == 1;
+      cells[i] = OCCUPIED(f1[i]);
 }
