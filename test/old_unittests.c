@@ -40,7 +40,7 @@ void test (int x, int y, int N, unsigned _h0, unsigned _h1) {
    h0 = get_old_hash (cells, x, y);
    t0 = time (NULL);
 
-   life_run(cells, x, y, N);
+   int n_iter = life_run(cells, x, y, N, NULL);
 
    c1 = clock ();
    h1 = get_old_hash (cells, x, y);
@@ -49,7 +49,7 @@ void test (int x, int y, int N, unsigned _h0, unsigned _h1) {
    lapse = (c1 - c0 + 0.0)/CLOCKS_PER_SEC;
 
    fprintf ( stderr, "%d steps %d_%d took %f (%d real) seconds (%f fps)\n",
-             N, x, y, lapse, (int)(t1 - t0), N/lapse );
+             n_iter, x, y, lapse, (int)(t1 - t0), N/lapse );
    fprintf ( stderr, "Hashes: 0x%08X -> 0x%08X\n", h0, h1 );
 
    assert ( _h0 == h0 );
@@ -104,3 +104,14 @@ int main ( int argc, char * argv[] ) {
 
    return 0;
 }
+
+/* new copernicus (MacBook Pro (13-inch, 2019, Four Thunderbolt 3 ports)
+2028 steps 100_100 took 0.087666 (0 real) seconds (57034.654256 fps)
+Hashes: 0xD7F4F066 -> 0x3D484A18
+100 steps 800_600 took 0.473867 (1 real) seconds (211.029677 fps)
+Hashes: 0xC6A7471D -> 0x29C07F40
+25 steps 1600_1200 took 0.713694 (1 real) seconds (35.029018 fps)
+Hashes: 0x22D82AFC -> 0x7B0270DD
+100 steps 1000_1000 took 1.017586 (1 real) seconds (98.271792 fps)
+Hashes: 0x980E00DD -> 0x83A152D0
+*/

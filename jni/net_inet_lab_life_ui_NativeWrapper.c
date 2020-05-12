@@ -20,7 +20,7 @@ JNIEXPORT void JNICALL Java_net_inet_1lab_life_ui_NativeWrapper__1oneStep
    // I don't know if we need this to avoid memory leak from fin allocation
    (*env)->ReleaseBooleanArrayElements(env, Fin, fin, 0);
 
-   life_run(cells, X, Y, 1);
+   life_run(cells, X, Y, 1, NULL);
 
    // not sure if this is kosher?
    // Perpahs copying every element in a loop would be safer
