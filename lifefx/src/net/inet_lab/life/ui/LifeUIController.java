@@ -25,6 +25,8 @@ public class LifeUIController {
     @FXML private Button bProperties;
     @FXML private Button bReset;
     @FXML private Button bRandomize;
+    @FXML private Button bStep;
+    @FXML private Button bRun;
     @FXML private TextField tFreq;
 
     private static final String KEY_F = "f";
@@ -43,37 +45,6 @@ public class LifeUIController {
         redraw ();
     }
 
-    static private byte[] encodeF(boolean[] d) {
-        final byte[] bytes = new byte[(d.length - 1)/ 8 + 1];
-        int n = 0;
-        for (int i = 0; i < d.length; i += 8) {
-            byte x = (byte) (
-                            ((i + 7 < d.length && d[i + 7]) ? 1 : 0)<<7 |
-                            ((i + 6 < d.length && d[i + 6]) ? 1 : 0)<<6 |
-                            ((i + 5 < d.length && d[i + 5]) ? 1 : 0)<<5 |
-                            ((i + 4 < d.length && d[i + 4]) ? 1 : 0)<<4 |
-                            ((i + 3 < d.length && d[i + 3]) ? 1 : 0)<<3 |
-                            ((i + 2 < d.length && d[i + 2]) ? 1 : 0)<<2 |
-                            ((i + 1 < d.length && d[i + 1]) ? 1 : 0)<<1 |
-                            (d[i] ? 1 : 0));
-            bytes[n ++] = x;
-        }
-        return bytes;
-    }
-
-    static private boolean[] decodeF(final byte[] bytes, final int N) {
-        final boolean[] d = new boolean[N];
-
-        for (int n = 0; n < bytes.length; n ++) {
-            int v = bytes[n] + 256;
-            for (int i = 0; i < 8 && 8*n + i < N; i ++) {
-                d[8*n + i] = v % 2 > 0;
-                v = (v - v%2) / 2;
-            }
-        }
-        return d;
-    }
-    
     public void initialize () {
         p = new Properties(prefs);
         F = decodeF(prefs.getByteArray(KEY_F,
@@ -141,7 +112,7 @@ public class LifeUIController {
             Random rand = new Random();
             double f;
             try {
-                f = Float.valueOf(tFreq.getText());
+                f = Float.parseFloat(tFreq.getText());
             }
             catch (Exception err) {
                 return;
@@ -150,6 +121,17 @@ public class LifeUIController {
             for (int i = 0; i < p.nX * p.nY; i ++)
                 F[i] = rand.nextFloat() < f;
             redraw ();
+        });
+
+        bStep.setOnAction(event -> {
+            final boolean[] F1 = NativeWrapper.oneStep(F, p.nX, p.nY);
+            GraphicsContext gc = cvs.getGraphicsContext2D();
+            for (int x = 0; x < p.nX; x++)
+                for (int y = 0; y < p.nY; y++)
+                    if (F[y * p.nX + x] != F1[y * p.nX + x]) {
+                        F[y * p.nX + x] = F1[y * p.nX + x];
+                        drawCell(gc, x, y);
+                    }
         });
 
         drawGrid(cvs.getGraphicsContext2D());
@@ -201,5 +183,36 @@ public class LifeUIController {
             for (int y = 0; y < p.nY; y ++)
                 if (F[y * p.nX + x])
                     drawCell(gc, x, y);
+    }
+
+    static private byte[] encodeF(boolean[] d) {
+        final byte[] bytes = new byte[(d.length - 1)/ 8 + 1];
+        int n = 0;
+        for (int i = 0; i < d.length; i += 8) {
+            byte x = (byte) (
+                            ((i + 7 < d.length && d[i + 7]) ? 1 : 0)<<7 |
+                            ((i + 6 < d.length && d[i + 6]) ? 1 : 0)<<6 |
+                            ((i + 5 < d.length && d[i + 5]) ? 1 : 0)<<5 |
+                            ((i + 4 < d.length && d[i + 4]) ? 1 : 0)<<4 |
+                            ((i + 3 < d.length && d[i + 3]) ? 1 : 0)<<3 |
+                            ((i + 2 < d.length && d[i + 2]) ? 1 : 0)<<2 |
+                            ((i + 1 < d.length && d[i + 1]) ? 1 : 0)<<1 |
+                            (d[i] ? 1 : 0));
+            bytes[n ++] = x;
+        }
+        return bytes;
+    }
+
+    static private boolean[] decodeF(final byte[] bytes, final int N) {
+        final boolean[] d = new boolean[N];
+
+        for (int n = 0; n < bytes.length; n ++) {
+            int v = bytes[n] + 256;
+            for (int i = 0; i < 8 && 8*n + i < N; i ++) {
+                d[8*n + i] = v % 2 > 0;
+                v = (v - v%2) / 2;
+            }
+        }
+        return d;
     }
 }
