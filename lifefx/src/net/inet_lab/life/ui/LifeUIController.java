@@ -5,6 +5,8 @@ import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.Pane;
@@ -17,16 +19,19 @@ import java.util.prefs.Preferences;
 public class LifeUIController {
     @FXML private Canvas cvs;
     @FXML private Pane pane;
-    @FXML private ColumnConstraints left;
-    @FXML private RowConstraints row;
+    @FXML private ColumnConstraints ccLeft;
+    @FXML private RowConstraints ccRow;
 
-    @FXML private Button bExit;
-    @FXML private Button bPreferences;
-    @FXML private Button bReset;
-    @FXML private Button bRandomize;
     @FXML private Button bStep;
     @FXML private Button bRun;
+    @FXML private CheckBox cbSkip;
+    @FXML private Button bReset;
+    @FXML private Button bRandomize;
     @FXML private TextField tFreq;
+    @FXML private Button bPreferences;
+    @FXML private Button bExit;
+
+    @FXML private Label lStatus;
 
     private static final String KEY_F = "f";
     private final  Preferences prefs = Preferences.userNodeForPackage(net.inet_lab.life.ui.LifeUIMain.class);
@@ -45,12 +50,16 @@ public class LifeUIController {
     }
 
     public void initialize () {
+        lStatus.setText("Initializing ...................................................................................................................................................................................................................");
+
         p = new Properties(prefs);
         F = decodeF(prefs.getByteArray(KEY_F,
                 encodeF(new boolean[p.nX * p.nY])), p.nX * p.nY);
 
-        cvs.setHeight(row.getPrefHeight());
-        cvs.setWidth(left.getPrefWidth());
+        cvs.setHeight(ccRow.getPrefHeight());
+        cvs.setWidth(ccLeft.getPrefWidth());
+
+        System.err.println("Initial canvas size: " + cvs.getWidth() + " x " + cvs.getHeight());
 
         setCSize();
 
@@ -129,6 +138,13 @@ public class LifeUIController {
                         F[y * p.nX + x] = F1[y * p.nX + x];
                         drawCell(gc, x, y);
                     }
+        });
+
+        bRun.setOnAction(event -> {
+            NativeWrapper.run(p.nY, p.nY, 0.1, F, (iter, F1) -> {
+               System.err.println("Received iteration " + iter);
+               return 0;
+            });
         });
 
         drawGrid(cvs.getGraphicsContext2D());
