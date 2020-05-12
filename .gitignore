@@ -1,3 +1,10 @@
+/jni/net_inet_lab_life_ui_NativeWrapper.h
+
 /lifefx/.idea
 /lifefx/out
+/jni/out
 
+.DS_Store
+*.dylib
+*.o
+*.a
