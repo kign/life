@@ -51,7 +51,7 @@
       <bottom>
          <VBox alignment="BOTTOM_LEFT" BorderPane.alignment="CENTER">
             <children>
-               <Button fx:id="bProperties" mnemonicParsing="false" text="Preferences" />
+               <Button fx:id="bPreferences" mnemonicParsing="false" text="Preferences" />
                <Button fx:id="bExit" mnemonicParsing="false" text="Exit">
                   <VBox.margin>
                      <Insets bottom="5.0" top="5.0" />

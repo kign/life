@@ -22,7 +22,7 @@ public class LifeUIController {
     @FXML private RowConstraints row;
 
     @FXML private Button bExit;
-    @FXML private Button bProperties;
+    @FXML private Button bPreferences;
     @FXML private Button bReset;
     @FXML private Button bRandomize;
     @FXML private Button bStep;
