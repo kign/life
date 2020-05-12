@@ -34,3 +34,16 @@ JNIEXPORT void JNICALL Java_net_inet_1lab_life_ui_NativeWrapper__1oneStep
 
    free(cells);
 }
+
+JNIEXPORT void JNICALL Java_net_inet_1lab_life_ui_NativeWrapper__1run
+  (JNIEnv * env, jclass _, jint X, jint Y, jdouble tout, jbooleanArray Fin, jobject cb
+) {
+   jclass cls = (*env)->GetObjectClass(env, cb);
+   jmethodID mid = (*env)->GetMethodID(env, cls, "report", "(I[Z)I");
+
+   if (mid == 0)
+      fprintf(stderr,"Cannot find 'report'\n");
+   else {
+      (*env)->CallIntMethod(env, cb, mid, 57, Fin);
+   }
+}
