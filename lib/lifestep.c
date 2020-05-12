@@ -5,15 +5,23 @@
 
 #include "lifestep.h"
 
-void life_pre_step (
+#define UPD_HASH(ind) hash ^= (ind) * 179424673
+
+void life_prepare (
    cell_t               * cells,
    int                  X,
-   int                  Y ) {
+   int                  Y,
+   lstepstat_t          * stat
+) {
+   int cnt = 0;
+   unsigned hash = 0;
 
    for ( int y = 0; y < Y; y ++ )
       for ( int x = 0; x < X; x ++ ) {
          int idx = X * y + x;
          if (cells[idx] == 1) {
+            cnt ++;
+            UPD_HASH(idx);
             for (int dx = -1; dx <= 1; dx ++)
                for (int dy = -1; dy <= 1; dy ++) {
                   int didx = X * ((y + dy + Y) % Y) + ((x + dx + X) % X);
@@ -23,17 +31,24 @@ void life_pre_step (
       }
 
    cells[X * Y] = 3; /* end-of-area sign */
+   if (stat != NULL) {
+      stat->count = cnt;
+      stat->hash = hash;
+   }
 }
 
 void life_step (
    cell_t               * cells,
    cell_t               * cellsnew,
    int                  X,
-   int                  Y ) {
-
+   int                  Y,
+   lstepstat_t          * stat
+) {
    int                  ind, x, y,  n, newv;
    int                  n00, n01, n02, n10, n12, n20, n21, n22;
    int                  v00, v01, v02, v10, v11, v12, v20, v21, v22;
+   int                  cnt = 0;
+   unsigned             hash = 0;
    cell_t               * p = cells - 1;
 
 
@@ -42,6 +57,7 @@ void life_step (
 
    /* Assuming there could be many empty cells, optimize looping the
     * best we can */
+
 
    while ( 1 ) {
       while (!*(++ p)); /* <-- does it look fast enough? */
@@ -92,6 +108,9 @@ void life_step (
       newv = n == 3 || (n == 2 && v11);
 
       if ( newv ) {
+         cnt ++;
+         UPD_HASH(ind);
+
          cellsnew[ind] = newv;
          (cellsnew[n00] == 1) || (cellsnew[n00] = 2);
          (cellsnew[n01] == 1) || (cellsnew[n01] = 2);
@@ -102,6 +121,10 @@ void life_step (
          (cellsnew[n21] == 1) || (cellsnew[n21] = 2);
          (cellsnew[n22] == 1) || (cellsnew[n22] = 2);
       }
+   }
+   if (stat != NULL) {
+      stat->count = cnt;
+      stat->hash = hash;
    }
 }
 
