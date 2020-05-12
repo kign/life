@@ -11,7 +11,6 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.RowConstraints;
 import javafx.scene.paint.Color;
 
-import java.util.Base64;
 import java.util.Random;
 import java.util.prefs.Preferences;
 
@@ -83,11 +82,9 @@ public class LifeUIController {
             prefs.putByteArray(KEY_F, encodeF(F));
         });
 
-        bExit.setOnAction(event -> {
-            Platform.exit();
-        });
+        bExit.setOnAction(event -> Platform.exit());
 
-        bProperties.setOnAction(event -> {
+        bPreferences.setOnAction(event -> {
             PropertiesDlg dlg = new PropertiesDlg(p);
             dlg.showAndWait().ifPresent(p1 -> {
                 final boolean[] F1 = new boolean[p1.nX * p1.nY];
