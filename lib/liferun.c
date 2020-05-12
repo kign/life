@@ -32,7 +32,6 @@ int life_run (
       fprintf(stderr, "\n");
    }
 
-
    for (int i = 0; i < X * Y; i ++)
       f1[i] = cells[i];
 
@@ -42,6 +41,7 @@ int life_run (
       cnt_callback(0, lstat.count);
 
    htrail[0] = lstat.hash;
+   //fprintf(stderr, "hash 0: 0x%08X\n", lstat.hash);
 
    int iter = 0;
    while (iter < n_steps) {
