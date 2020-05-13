@@ -45,7 +45,7 @@ int life_run (
       (*cb->cb_ptr)(cb->cb_data, iter, lstat.count, f1, 0, &stop);
 
    htrail[0] = lstat.hash;
-   //fprintf(stderr, "hash 0: 0x%08X\n", lstat.hash);
+   //fprintf(stderr, "hash %d: 0x%08X\n", iter, lstat.hash);
 
    while (n_steps <= 0 || iter < n_steps) {
       life_step(f1, f2, X, Y, &lstat);
