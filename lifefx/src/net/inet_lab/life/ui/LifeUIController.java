@@ -43,8 +43,10 @@ public class LifeUIController {
 
     @FXML private Label lStatus;
 
+    private final Object lock = new Object();
+
     private static final String KEY_F = "f";
-    private final  Preferences prefs = Preferences.userNodeForPackage(net.inet_lab.life.ui.LifeUIMain.class);
+    private final Preferences prefs = Preferences.userNodeForPackage(net.inet_lab.life.ui.LifeUIMain.class);
 
     private int csize;
     private Properties p;
@@ -153,15 +155,91 @@ public class LifeUIController {
 
         bStep.setOnAction(event -> {
             final boolean[] F1 = NativeWrapper.oneStep(F, p.nX, p.nY);
+            System.err.println("(Step) " + ", F1 = " + F1 + ", 63=" + F1[63] + ", 64=" + F1[64] + ", 66=" + F1[66] + ", 67=" + F1[67]);
             update(F1);
         });
 
-        bRun.setOnAction(event -> NativeWrapper.run(p.nX, p.nY, cbSkip.isSelected()?0.1:(-1), F, (iter, count, fin, F1) -> {
+//        bRun.setOnAction(event -> NativeWrapper.run(p.nX, p.nY, cbSkip.isSelected()?0.1:(-1), F, (iter, count, fin, F1) -> {
+//            System.err.println("[" + iter + "] C:" + count + " F:" + fin);
+//            //System.err.println("(Outside) " + iter + ", F1 = " + F1 + ", 63=" + F1[63] + ", 64=" + F1[64] + ", 66=" + F1[66] + ", 67=" + F1[67]);
+//            final boolean[] F1Copy = Arrays.copyOfRange(F1, 0, F1.length);
+//
+//
+//            Platform.runLater(() -> {
+//                lStatus.setText(String.format("Iteration %d density %.3f", iter, 1.0 * count / p.nX / p.nY));
+//                //System.err.println("(Inside) " + iter + ", F1 = " + F1 + ", 63=" + F1[63] + ", 64=" + F1[64] + ", 66=" + F1[66] + ", 67=" + F1[67]);
+//                update(F1Copy);
+//            });
+//            return 0;
+//        }));
+
+//        bRun.setOnAction(event -> {
+//            for (int i = 0; i < 150; i ++) {
+//                final int iter = i;
+//                final boolean[] F1 = NativeWrapper.oneStep(F, p.nX, p.nY);
+//                update(F1);
+//                System.err.println("(Outside) " + i + ", F1 = " + F1 + ", 63=" + F1[63] + ", 64=" + F1[64] + ", 66=" + F1[66] + ", 67=" + F1[67]);
+//                Platform.runLater(() -> {
+//                    update(F1);
+//                    System.err.println("(Inside) " + iter + ", F1 = " + F1 + ", 63=" + F1[63] + ", 64=" + F1[64] + ", 66=" + F1[66] + ", 67=" + F1[67]);
+//                    lStatus.setText("Iteration " + iter);
+//                });
+//            }
+//        });
+
+//        bRun.setOnAction(event -> {
+//            new Thread(() -> {
+//                int i = 0;
+//                while (true) {
+//                    i++;
+//                    final int iter = i;
+//                    Random rand = new Random();
+//                    final boolean[] F1 = new boolean[p.nX * p.nY];
+//                    for (int j = 0; j < p.nX * p.nY; j++)
+//                        F1[j] = rand.nextFloat() < 0.3;
+//                    System.err.println("[Worker] Iteration = " + iter);
+//
+//                    Platform.runLater(() -> {
+//                        System.err.println("[Main] Iteration = " + iter);
+//                        synchronized(lock) {
+//                            lock.notifyAll();
+//                        }
+//                        update(F1);
+//                        lStatus.setText("Iteration " + iter);
+//                    });
+//
+//                    try {
+//                        synchronized(lock) {
+//                            lock.wait(10000);
+//                        }
+//                    } catch (InterruptedException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//            }).start();
+//        });
+
+        bRun.setOnAction(event -> new Thread(() -> NativeWrapper.run(p.nX, p.nY, cbSkip.isSelected() ? 0.1 : (-1), F, (iter, count, fin, _F1) -> {
             System.err.println("[" + iter + "] C:" + count + " F:" + fin);
-            lStatus.setText(String.format("Iteration %d density %.3f", iter, 1.0*count/p.nX/p.nY));
-            update(F1);
+            final boolean[] F1 = Arrays.copyOfRange(_F1, 0, _F1.length);
+
+            Platform.runLater(() -> {
+                lStatus.setText(String.format("Iteration %d density %.3f", iter, 1.0 * count / p.nX / p.nY));
+                update(F1);
+                synchronized (lock) {
+                    lock.notifyAll();
+                }
+            });
+
+            try {
+                synchronized (lock) {
+                    lock.wait(10000);
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             return 0;
-        }));
+        })).start());
 
         bSave.setOnAction(event -> {
             fileChooser.setTitle("Save current board");
@@ -206,6 +284,9 @@ public class LifeUIController {
                     })) {
                         System.err.println("Improperly formatted file " + file);
                     }
+                    else {
+                        fileChooser.setInitialDirectory(file.getParentFile());
+                    }
                 }
             } catch (Exception err) {
                 System.err.println("Could not read file " + err);
@@ -225,7 +306,7 @@ public class LifeUIController {
                     drawCell(gc, x, y);
                     cng ++;
                 }
-        System.err.println("Updated " + cng + "cells");
+        System.err.println("Updated " + cng + " cells");
     }
 
     private void redraw ()  {
@@ -311,6 +392,7 @@ public class LifeUIController {
         boolean[] F1=null;
 
         int i;
+        //noinspection StatementWithEmptyBody
         for (i = 0; i < bytes.length && i < prefix.length && bytes[i] == prefix[i]; i ++);
         if (i == prefix.length) {
             final Pattern p = Pattern.compile("(\\d+)\\.(\\d+)\\.");
@@ -343,7 +425,7 @@ public class LifeUIController {
                     if (rows[y].length() != X)
                         return false;
                     for (int x = 0; x < X; x ++)
-                        F1[y * p.nX + x] = rows[y].charAt(x) != '.' && rows[y].charAt(x) != ' ';
+                        F1[y * X + x] = rows[y].charAt(x) != '.' && rows[y].charAt(x) != ' ';
                 }
             } catch (Exception err) {
                 return false;
