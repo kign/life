@@ -15,12 +15,12 @@ public class NativeWrapper {
     private static native void _oneStep(int X, int Y, boolean[] F, boolean[] F1);
 
     public interface runCallback {
-        int report(int iter, boolean[] F);
+        int report(int iter, int count, int fin, boolean[] F);
     }
 
     public static void run(int X, int Y, double tout, boolean[] F, runCallback cb) {
-        _run(X, Y, tout, F, cb);
+        _run(X, Y, tout, F, new boolean[X * Y], cb);
     }
 
-    private static native void _run(int X, int Y, double tout, boolean[] F, runCallback cb);
+    private static native void _run(int X, int Y, double tout, boolean[] F, boolean[] F1, runCallback cb);
 }
