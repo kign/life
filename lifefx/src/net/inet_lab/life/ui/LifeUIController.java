@@ -12,9 +12,17 @@ import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.RowConstraints;
 import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.prefs.Preferences;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class LifeUIController {
     @FXML private Canvas cvs;
@@ -25,6 +33,8 @@ public class LifeUIController {
     @FXML private Button bStep;
     @FXML private Button bRun;
     @FXML private CheckBox cbSkip;
+    @FXML private Button bSave;
+    @FXML private Button bRead;
     @FXML private Button bReset;
     @FXML private Button bRandomize;
     @FXML private TextField tFreq;
@@ -39,6 +49,12 @@ public class LifeUIController {
     private int csize;
     private Properties p;
     private boolean[] F;
+    private Stage primaryStage;
+    private FileChooser fileChooser;
+
+    public void setStage(final Stage stage) {
+        primaryStage = stage;
+    }
 
     public void resize() {
         cvs.setHeight(pane.getHeight());
@@ -50,7 +66,13 @@ public class LifeUIController {
     }
 
     public void initialize () {
-        lStatus.setText("Initializing ...................................................................................................................................................................................................................");
+        lStatus.setText("Initializing");
+
+        fileChooser = new FileChooser();
+        fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Life Text", "*.life"),
+                new FileChooser.ExtensionFilter("Life Binary", "*.blife"));
 
         p = new Properties(prefs);
         F = decodeF(prefs.getByteArray(KEY_F,
@@ -131,23 +153,79 @@ public class LifeUIController {
 
         bStep.setOnAction(event -> {
             final boolean[] F1 = NativeWrapper.oneStep(F, p.nX, p.nY);
-            GraphicsContext gc = cvs.getGraphicsContext2D();
-            for (int x = 0; x < p.nX; x++)
-                for (int y = 0; y < p.nY; y++)
-                    if (F[y * p.nX + x] != F1[y * p.nX + x]) {
-                        F[y * p.nX + x] = F1[y * p.nX + x];
-                        drawCell(gc, x, y);
-                    }
+            update(F1);
         });
 
-        bRun.setOnAction(event -> {
-            NativeWrapper.run(p.nY, p.nY, 0.1, F, (iter, F1) -> {
-               System.err.println("Received iteration " + iter);
-               return 0;
-            });
+        bRun.setOnAction(event -> NativeWrapper.run(p.nX, p.nY, cbSkip.isSelected()?0.1:(-1), F, (iter, count, fin, F1) -> {
+            System.err.println("[" + iter + "] C:" + count + " F:" + fin);
+            lStatus.setText(String.format("Iteration %d density %.3f", iter, 1.0*count/p.nX/p.nY));
+            update(F1);
+            return 0;
+        }));
+
+        bSave.setOnAction(event -> {
+            fileChooser.setTitle("Save current board");
+            fileChooser.setInitialFileName("myboard");
+            try {
+                //Actually displays the save dialog - blocking
+                final File file = fileChooser.showSaveDialog(primaryStage);
+                if (file != null) {
+                    final File dir = file.getParentFile();//gets the selected directory
+                    //update the file chooser directory to user selected, so the choice is "remembered"
+                    fileChooser.setInitialDirectory(dir);
+                    System.err.println("Saving to " + file);
+                    final boolean bin = file.getName().endsWith(".blife");
+                    (new FileOutputStream(file)).write(bytes_save(bin));
+                }
+            } catch (Exception err) {
+                System.err.println("Could not save file " + err);
+            }
+        });
+
+        bRead.setOnAction(event -> {
+            fileChooser.setTitle("Open board");
+            try {
+                final File file = fileChooser.showOpenDialog(primaryStage);
+                if (file != null) {
+                    if (!bytes_read(Files.readAllBytes(file.toPath()), (X, Y, F1) -> {
+                        if (p.nX == X && p.nY == Y) {
+                            GraphicsContext gc = cvs.getGraphicsContext2D();
+                            for (int x = 0; x < X; x++)
+                                for (int y = 0; y < Y; y++) {
+                                    F[y * X + x] = F1[y * X + x];
+                                    drawCell(gc, x, y);
+                                }
+                        }
+                        else {
+                            p = new Properties(X, Y);
+                            F = F1;
+                            setCSize();
+                            p.save(prefs);
+                            redraw ();
+                        }
+                    })) {
+                        System.err.println("Improperly formatted file " + file);
+                    }
+                }
+            } catch (Exception err) {
+                System.err.println("Could not read file " + err);
+            }
         });
 
         drawGrid(cvs.getGraphicsContext2D());
+    }
+
+    private void update (final boolean[] F1) {
+        GraphicsContext gc = cvs.getGraphicsContext2D();
+        int cng = 0;
+        for (int x = 0; x < p.nX; x++)
+            for (int y = 0; y < p.nY; y++)
+                if (F[y * p.nX + x] != F1[y * p.nX + x]) {
+                    F[y * p.nX + x] = F1[y * p.nX + x];
+                    drawCell(gc, x, y);
+                    cng ++;
+                }
+        System.err.println("Updated " + cng + "cells");
     }
 
     private void redraw ()  {
@@ -196,6 +274,83 @@ public class LifeUIController {
             for (int y = 0; y < p.nY; y ++)
                 if (F[y * p.nX + x])
                     drawCell(gc, x, y);
+    }
+
+    static private final byte[] prefix = new byte[]{0x02, 0x57, (byte) 0xAB};
+    private byte[] bytes_save (boolean bin) {
+        if (bin) {
+            final byte[] size = (p.nX + "." + p.nY + ".").getBytes();
+            final byte[] cont = encodeF(F);
+
+            final byte[] res = new byte[prefix.length + size.length + cont.length];
+            System.arraycopy(prefix, 0, res, 0, prefix.length);
+            System.arraycopy(size, 0, res, prefix.length, size.length);
+            System.arraycopy(cont, 0, res, prefix.length + size.length, cont.length);
+
+            return res;
+        }
+        else {
+            StringBuilder res = new StringBuilder();
+
+            for (int y = 0; y < p.nY; y ++) {
+                for (int x = 0; x < p.nX; x ++)
+                    res.append(F[y * p.nX + x]?'x':'.');
+                res.append('\n');
+            }
+
+            return res.toString().getBytes();
+        }
+    }
+
+    private interface _bytes_read {
+        void read_successfully(int X, int Y, boolean[] F1);
+    }
+
+    private boolean bytes_read(final byte[] bytes, _bytes_read cb) {
+        int X=0, Y=0;
+        boolean[] F1=null;
+
+        int i;
+        for (i = 0; i < bytes.length && i < prefix.length && bytes[i] == prefix[i]; i ++);
+        if (i == prefix.length) {
+            final Pattern p = Pattern.compile("(\\d+)\\.(\\d+)\\.");
+
+            boolean found = false;
+            for (int j = i + 1; j < i + 100 && !found; j ++) {
+                try {
+                    final String xy = new String(Arrays.copyOfRange(bytes, i, j));
+                    Matcher m = p.matcher(xy);
+                    if (m.lookingAt()) {
+                        X = Integer.parseInt(m.group(1));
+                        Y = Integer.parseInt(m.group(2));
+                        if (X < 2 || Y < 2 || X*Y > 1_000_000_000)
+                            return false;
+                        F1 = decodeF(Arrays.copyOfRange(bytes, j, bytes.length), X * Y);
+                        found = true;
+                    }
+                } catch (Exception ignored) {}
+            }
+            if (!found)
+                return false;
+        }
+        else {
+            try {
+                final String[] rows = (new String(bytes)).split("\n");
+                X = rows[0].length();
+                Y = rows.length;
+                F1 = new boolean[X * Y];
+                for (int y = 0; y < Y; y ++) {
+                    if (rows[y].length() != X)
+                        return false;
+                    for (int x = 0; x < X; x ++)
+                        F1[y * p.nX + x] = rows[y].charAt(x) != '.' && rows[y].charAt(x) != ' ';
+                }
+            } catch (Exception err) {
+                return false;
+            }
+        }
+        cb.read_successfully(X, Y, F1);
+        return true;
     }
 
     static private byte[] encodeF(boolean[] d) {

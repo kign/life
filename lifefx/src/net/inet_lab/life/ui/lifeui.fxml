@@ -13,6 +13,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
+<?import javafx.scene.layout.HBox?>
 <GridPane gridLinesVisible="true" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="525.0" prefWidth="605.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="net.inet_lab.life.ui.LifeUIController">
     <columnConstraints>
         <ColumnConstraints fx:id="ccLeft" hgrow="ALWAYS" maxWidth="Infinity" minWidth="100.0" prefWidth="510.0" />
@@ -43,6 +44,12 @@
       </top>
       <center>
          <VBox alignment="CENTER_LEFT" BorderPane.alignment="CENTER">
+            <Button fx:id="bSave" mnemonicParsing="false" text="Save"/>
+            <Button fx:id="bRead" mnemonicParsing="false" text="Read">
+               <VBox.margin>
+                  <Insets bottom="5.0" top="5.0"/>
+               </VBox.margin>
+            </Button>
             <Button fx:id="bReset" mnemonicParsing="false" text="Reset"/>
             <Button fx:id="bRandomize" mnemonicParsing="false" text="Randomize">
                <VBox.margin>
