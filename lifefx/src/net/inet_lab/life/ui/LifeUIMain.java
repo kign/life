@@ -14,7 +14,8 @@ public class LifeUIMain extends Application {
 
         // Weird getResource() won't work, yields NULL controller
         final GridPane root = loader.load(getClass().getResourceAsStream("lifeui.fxml"));
-        final LifeUIController controller = (LifeUIController)loader.getController();
+        final LifeUIController controller = loader.getController();
+        controller.setStage(primaryStage);
 
         primaryStage.setTitle("LIFE");
         final Scene scene = new Scene(root, root.getPrefWidth(), root.getPrefHeight());
