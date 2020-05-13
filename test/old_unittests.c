@@ -40,7 +40,7 @@ void test (int x, int y, int N, unsigned _h0, unsigned _h1) {
    h0 = get_old_hash (cells, x, y);
    t0 = time (NULL);
 
-   int n_iter = life_run(cells, x, y, N, NULL);
+   int n_iter = life_run(cells, cells, x, y, N, NULL);
 
    c1 = clock ();
    h1 = get_old_hash (cells, x, y);
@@ -49,7 +49,7 @@ void test (int x, int y, int N, unsigned _h0, unsigned _h1) {
    lapse = (c1 - c0 + 0.0)/CLOCKS_PER_SEC;
 
    fprintf ( stderr, "%d steps %d_%d took %f (%d real) seconds (%f fps)\n",
-             n_iter, x, y, lapse, (int)(t1 - t0), N/lapse );
+             n_iter, x, y, lapse, (int)(t1 - t0), n_iter/lapse );
    fprintf ( stderr, "Hashes: 0x%08X -> 0x%08X\n", h0, h1 );
 
    assert ( _h0 == h0 );
