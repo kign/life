@@ -1,13 +1,13 @@
 package net.inet_lab.life.ui;
 
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.RowConstraints;
@@ -31,8 +31,10 @@ public class LifeUIController {
     @FXML private RowConstraints ccRow;
 
     @FXML private Button bStep;
-    @FXML private Button bRun;
-    @FXML private CheckBox cbSkip;
+    @FXML private SplitMenuButton sbRun;
+    @FXML private MenuItem miRun;
+    @FXML private MenuItem miRunSlow;
+    @FXML private MenuItem miRunFast;
     @FXML private Button bSave;
     @FXML private Button bRead;
     @FXML private Button bReset;
@@ -46,6 +48,9 @@ public class LifeUIController {
     private final Object lock = new Object();
 
     private static final String KEY_F = "f";
+    private static final String KEY_DIR = "D";
+    private static final String KEY_RM = "R";
+
     private final Preferences prefs = Preferences.userNodeForPackage(net.inet_lab.life.ui.LifeUIMain.class);
 
     private int csize;
@@ -53,6 +58,10 @@ public class LifeUIController {
     private boolean[] F;
     private Stage primaryStage;
     private FileChooser fileChooser;
+
+    private int step_count;
+
+    private MenuItem runMode;
 
     public void setStage(final Stage stage) {
         primaryStage = stage;
@@ -71,7 +80,11 @@ public class LifeUIController {
         lStatus.setText("Initializing");
 
         fileChooser = new FileChooser();
-        fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
+        fileChooser.setInitialDirectory(
+                new File(
+                        new String(prefs.getByteArray(
+                                KEY_DIR,
+                                System.getProperty("user.home").getBytes()))));
         fileChooser.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("Life Text", "*.life"),
                 new FileChooser.ExtensionFilter("Life Binary", "*.blife"));
@@ -79,6 +92,9 @@ public class LifeUIController {
         p = new Properties(prefs);
         F = decodeF(prefs.getByteArray(KEY_F,
                 encodeF(new boolean[p.nX * p.nY])), p.nX * p.nY);
+
+        final int rm = prefs.getInt(KEY_RM, 0);
+        Platform.runLater(() -> ((rm == -1)?miRunSlow:((rm == 1)?miRunFast:miRun)).fire ());
 
         cvs.setHeight(ccRow.getPrefHeight());
         cvs.setWidth(ccLeft.getPrefWidth());
@@ -113,6 +129,7 @@ public class LifeUIController {
             }
 
             prefs.putByteArray(KEY_F, encodeF(F));
+            userInitiatedChange();
         });
 
         bExit.setOnAction(event -> Platform.exit());
@@ -130,12 +147,14 @@ public class LifeUIController {
                 p.save(prefs);
                 prefs.putByteArray(KEY_F, encodeF(F));
                 redraw ();
+                userInitiatedChange();
             });
         });
 
         bReset.setOnAction(event -> {
             F = new boolean[p.nX * p.nY];
             redraw ();
+            userInitiatedChange();
         });
 
         bRandomize.setOnAction(event -> {
@@ -151,80 +170,25 @@ public class LifeUIController {
             for (int i = 0; i < p.nX * p.nY; i ++)
                 F[i] = rand.nextFloat() < f;
             redraw ();
+            userInitiatedChange();
         });
 
         bStep.setOnAction(event -> {
             final boolean[] F1 = NativeWrapper.oneStep(F, p.nX, p.nY);
-            System.err.println("(Step) " + ", F1 = " + F1 + ", 63=" + F1[63] + ", 64=" + F1[64] + ", 66=" + F1[66] + ", 67=" + F1[67]);
+            //System.err.println("(Step) " + ", F1 = " + F1 + ", 63=" + F1[63] + ", 64=" + F1[64] + ", 66=" + F1[66] + ", 67=" + F1[67]);
             update(F1);
+            step_count ++;
+            lStatus.setText("Step " + step_count);
         });
 
-//        bRun.setOnAction(event -> NativeWrapper.run(p.nX, p.nY, cbSkip.isSelected()?0.1:(-1), F, (iter, count, fin, F1) -> {
-//            System.err.println("[" + iter + "] C:" + count + " F:" + fin);
-//            //System.err.println("(Outside) " + iter + ", F1 = " + F1 + ", 63=" + F1[63] + ", 64=" + F1[64] + ", 66=" + F1[66] + ", 67=" + F1[67]);
-//            final boolean[] F1Copy = Arrays.copyOfRange(F1, 0, F1.length);
-//
-//
-//            Platform.runLater(() -> {
-//                lStatus.setText(String.format("Iteration %d density %.3f", iter, 1.0 * count / p.nX / p.nY));
-//                //System.err.println("(Inside) " + iter + ", F1 = " + F1 + ", 63=" + F1[63] + ", 64=" + F1[64] + ", 66=" + F1[66] + ", 67=" + F1[67]);
-//                update(F1Copy);
-//            });
-//            return 0;
-//        }));
-
-//        bRun.setOnAction(event -> {
-//            for (int i = 0; i < 150; i ++) {
-//                final int iter = i;
-//                final boolean[] F1 = NativeWrapper.oneStep(F, p.nX, p.nY);
-//                update(F1);
-//                System.err.println("(Outside) " + i + ", F1 = " + F1 + ", 63=" + F1[63] + ", 64=" + F1[64] + ", 66=" + F1[66] + ", 67=" + F1[67]);
-//                Platform.runLater(() -> {
-//                    update(F1);
-//                    System.err.println("(Inside) " + iter + ", F1 = " + F1 + ", 63=" + F1[63] + ", 64=" + F1[64] + ", 66=" + F1[66] + ", 67=" + F1[67]);
-//                    lStatus.setText("Iteration " + iter);
-//                });
-//            }
-//        });
-
-//        bRun.setOnAction(event -> {
-//            new Thread(() -> {
-//                int i = 0;
-//                while (true) {
-//                    i++;
-//                    final int iter = i;
-//                    Random rand = new Random();
-//                    final boolean[] F1 = new boolean[p.nX * p.nY];
-//                    for (int j = 0; j < p.nX * p.nY; j++)
-//                        F1[j] = rand.nextFloat() < 0.3;
-//                    System.err.println("[Worker] Iteration = " + iter);
-//
-//                    Platform.runLater(() -> {
-//                        System.err.println("[Main] Iteration = " + iter);
-//                        synchronized(lock) {
-//                            lock.notifyAll();
-//                        }
-//                        update(F1);
-//                        lStatus.setText("Iteration " + iter);
-//                    });
-//
-//                    try {
-//                        synchronized(lock) {
-//                            lock.wait(10000);
-//                        }
-//                    } catch (InterruptedException e) {
-//                        e.printStackTrace();
-//                    }
-//                }
-//            }).start();
-//        });
-
-        bRun.setOnAction(event -> new Thread(() -> NativeWrapper.run(p.nX, p.nY, cbSkip.isSelected() ? 0.1 : (-1), F, (iter, count, fin, _F1) -> {
-            System.err.println("[" + iter + "] C:" + count + " F:" + fin);
+        sbRun.setOnAction(event ->
+                         new Thread(() ->
+                         NativeWrapper.run(p.nX, p.nY, (runMode == miRunFast)?p.skip:(-1), F, (iter, count, fin, _F1) -> {
+            //System.err.println("[" + iter + "] C:" + count + " F:" + fin);
             final boolean[] F1 = Arrays.copyOfRange(_F1, 0, _F1.length);
 
             Platform.runLater(() -> {
-                lStatus.setText(String.format("Iteration %d density %.3f", iter, 1.0 * count / p.nX / p.nY));
+                lStatus.setText(String.format("Iteration %d density %.3f%s", iter, 1.0 * count / p.nX / p.nY, (fin==1)?"; stopped":""));
                 update(F1);
                 synchronized (lock) {
                     lock.notifyAll();
@@ -233,13 +197,27 @@ public class LifeUIController {
 
             try {
                 synchronized (lock) {
+                    if (runMode == miRunSlow)
+                        Thread.sleep((int)(p.delay * 1000));
                     lock.wait(10000);
                 }
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+
             return 0;
         })).start());
+
+        final EventHandler<ActionEvent> runSelectorCb = event -> {
+            var target = event.getTarget();
+            runMode = (MenuItem) target;
+            sbRun.setText(runMode.getText());
+            prefs.putInt(KEY_RM, (runMode == miRunSlow)?-1:((runMode == miRunFast)?1:0));
+        };
+
+        miRun.setOnAction(runSelectorCb);
+        miRunSlow.setOnAction(runSelectorCb);
+        miRunFast.setOnAction(runSelectorCb);
 
         bSave.setOnAction(event -> {
             fileChooser.setTitle("Save current board");
@@ -251,6 +229,7 @@ public class LifeUIController {
                     final File dir = file.getParentFile();//gets the selected directory
                     //update the file chooser directory to user selected, so the choice is "remembered"
                     fileChooser.setInitialDirectory(dir);
+                    prefs.putByteArray(KEY_DIR, dir.toString().getBytes());
                     System.err.println("Saving to " + file);
                     final boolean bin = file.getName().endsWith(".blife");
                     (new FileOutputStream(file)).write(bytes_save(bin));
@@ -285,7 +264,11 @@ public class LifeUIController {
                         System.err.println("Improperly formatted file " + file);
                     }
                     else {
-                        fileChooser.setInitialDirectory(file.getParentFile());
+                        userInitiatedChange();
+                        final File dir = file.getParentFile();//gets the selected directory
+                        //update the file chooser directory to user selected, so the choice is "remembered"
+                        fileChooser.setInitialDirectory(dir);
+                        prefs.putByteArray(KEY_DIR, dir.toString().getBytes());
                     }
                 }
             } catch (Exception err) {
@@ -294,6 +277,8 @@ public class LifeUIController {
         });
 
         drawGrid(cvs.getGraphicsContext2D());
+
+        lStatus.setText("Click on board or use control buttons");
     }
 
     private void update (final boolean[] F1) {
@@ -306,7 +291,7 @@ public class LifeUIController {
                     drawCell(gc, x, y);
                     cng ++;
                 }
-        System.err.println("Updated " + cng + " cells");
+        //System.err.println("Updated " + cng + " cells");
     }
 
     private void redraw ()  {
@@ -341,7 +326,6 @@ public class LifeUIController {
     }
 
     private void drawGrid(final GraphicsContext gc) {
-
         for ( int i = 0; i <= p.nY; i ++ )
             gc.strokeLine (
                     1, 1 + i * (csize + 1),
@@ -355,6 +339,10 @@ public class LifeUIController {
             for (int y = 0; y < p.nY; y ++)
                 if (F[y * p.nX + x])
                     drawCell(gc, x, y);
+    }
+
+    private void userInitiatedChange() {
+        step_count = 0;
     }
 
     static private final byte[] prefix = new byte[]{0x02, 0x57, (byte) 0xAB};
