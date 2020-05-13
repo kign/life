@@ -2,16 +2,18 @@
 #include <stdio.h>
 
 #include "lifestep.h"
+#include "liferun.h"
 
 #define OCCUPIED(x)       ((x) == 1)
 #define EMPTY(x)          ((x) != 1)
 
 int life_run (
-	unsigned char * cells,
+   const unsigned char * cells_in,
+   unsigned char * cells_out,
 	unsigned int X,
 	unsigned int Y,
 	unsigned int n_steps,
-   void (* cnt_callback)()
+   liferun_cb_t * cb
 ) {
    const int N_htrail = 10;
 
@@ -27,24 +29,25 @@ int life_run (
       for (int i = 0; i < X * Y; i ++) {
          if (i % X == 0)
             fprintf(stderr, "\n");
-         fprintf(stderr, "%c", cells[i]?'x':'.');
+         fprintf(stderr, "%c", cells_in[i]?'x':'.');
       }
       fprintf(stderr, "\n");
    }
 
    for (int i = 0; i < X * Y; i ++)
-      f1[i] = cells[i];
+      f1[i] = cells_in[i];
 
    life_prepare (f1, X, Y, &lstat);
 
-   if (cnt_callback != NULL)
-      cnt_callback(0, lstat.count);
+   int iter = 0;
+   int stop = 0;
+   if (cb != NULL)
+      (*cb->cb_ptr)(cb->cb_data, iter, lstat.count, f1, 0, &stop);
 
    htrail[0] = lstat.hash;
    //fprintf(stderr, "hash 0: 0x%08X\n", lstat.hash);
 
-   int iter = 0;
-   while (iter < n_steps) {
+   while (n_steps <= 0 || iter < n_steps) {
       life_step(f1, f2, X, Y, &lstat);
 
       cell_t * t = f1;
@@ -53,20 +56,31 @@ int life_run (
 
       iter ++;
 
-      if (cnt_callback != NULL)
-         cnt_callback(iter, lstat.count);
-
       int i = 0;
       for (; i < N_htrail && htrail[i] != lstat.hash; i ++);
-      if (i < N_htrail)
+
+      if (cb != NULL)
+         (*cb->cb_ptr)(cb->cb_data, iter, lstat.count, f1,
+                        iter == n_steps || i < N_htrail, &stop);
+      if (stop || i < N_htrail)
          break;
       htrail[iter % N_htrail] = lstat.hash;
    }
 
-   for (int i = 0; i < X * Y; i ++)
-      cells[i] = OCCUPIED(f1[i]);
+   if (cells_out != NULL) {
+      for (int i = 0; i < X * Y; i ++)
+         cells_out[i] = OCCUPIED(f1[i]);
+   }
 
    free(htrail);
 
    return iter;
+}
+
+void life_extract_cells (void * f, unsigned char * cells) {
+   cell_t * p;
+   unsigned char * c;
+
+   for (p = (cell_t *) f, c = cells; *p != 3; p ++, c++)
+      *c = OCCUPIED(*p);
 }
