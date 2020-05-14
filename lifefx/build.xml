@@ -1,0 +1,37 @@
+<project name="inet-lab Java Utilities" default="build-jar">
+  <property name="class-dir" value="build/classes"/>
+  <property name="jar-dir" value="build/jar"/>
+
+  <path id="classpath">
+    <fileset dir="${user.home}/Apps/javafx-sdk-14.0.1/lib" includes="*.jar"/>
+  </path>
+
+  <target name="clean">
+    <delete dir="build"/>
+  </target>
+
+  <target name="compile">
+    <mkdir dir="${class-dir}"/>
+    <javac includeantruntime="false" debug="true" classpathref="classpath" srcdir="src" destdir="${class-dir}">
+      <compilerarg value="-Xlint:deprecation"/>
+    </javac>
+  </target>
+
+  <target name="build-jar" depends="compile">
+    <mkdir dir="${jar-dir}"/>
+    <jar destfile="${jar-dir}/lifefx.jar">
+      <fileset dir="${class-dir}"/>
+      <fileset dir="resources"/>
+    </jar>
+  </target>
+
+  <target name="run" depends="build-jar">
+    <java classname="net.inet_lab.life.ui.LifeUIMain" fork="true">
+      <classpath>
+        <path refid="classpath"/>
+        <path location="${jar-dir}/lifefx.jar"/>
+      </classpath>
+      <jvmarg line="--module-path ${user.home}/Apps/javafx-sdk-14.0.1/lib --add-modules javafx.controls,javafx.fxml"/>
+    </java>
+  </target>
+</project>
