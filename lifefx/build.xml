@@ -1,5 +1,6 @@
-<project name="inet-lab Java Utilities" default="build-jar">
+<project name="inet-lab Java Utilities" default="build">
   <property name="class-dir" value="build/classes"/>
+  <property name="lib-dir" value="build/lib"/>
   <property name="jar-dir" value="build/jar"/>
 
   <path id="classpath">
@@ -25,12 +26,20 @@
     </jar>
   </target>
 
-  <target name="run" depends="build-jar">
+  <target name="copy-libs">
+    <mkdir dir="${lib-dir}"/>
+    <copy file="../jni/liblifenative.dylib" todir="${lib-dir}"/>
+  </target>
+
+  <target name="build" depends="build-jar,copy-libs"/>
+
+  <target name="run" depends="build">
     <java classname="net.inet_lab.life.ui.LifeUIMain" fork="true">
       <classpath>
         <path refid="classpath"/>
         <path location="${jar-dir}/lifefx.jar"/>
       </classpath>
+      <sysproperty key="java.library.path" value="${lib-dir}"/>
       <jvmarg line="--module-path ${user.home}/Apps/javafx-sdk-14.0.1/lib --add-modules javafx.controls,javafx.fxml"/>
     </java>
   </target>
