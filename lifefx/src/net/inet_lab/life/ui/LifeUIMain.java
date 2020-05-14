@@ -3,6 +3,7 @@ package net.inet_lab.life.ui;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 
@@ -18,6 +19,10 @@ public class LifeUIMain extends Application {
         controller.setStage(primaryStage);
 
         primaryStage.setTitle("LIFE");
+        var img = new Image(getClass().getResourceAsStream("Icon.png"));
+        //Utils.setDockIconImage(img);
+        primaryStage.getIcons().add(img);
+
         final Scene scene = new Scene(root, root.getPrefWidth(), root.getPrefHeight());
         scene.widthProperty().addListener((__, oldWidth, newWidth) -> controller.resize());
         scene.heightProperty().addListener((__, oldHeight, newHeight) -> controller.resize());
