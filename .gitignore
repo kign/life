@@ -2,6 +2,7 @@
 
 /lifefx/.idea
 /lifefx/out
+/lifefx/build
 /jni/out
 
 .DS_Store
