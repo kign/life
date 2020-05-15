@@ -6,6 +6,9 @@ import javafx.scene.image.Image;
 import java.awt.image.BufferedImage;
 import java.lang.reflect.Method;
 
+/**
+ * This class is not use in this app, but could be useful in the future
+ */
 public class Utils {
     public static void setDockIconImage(final Image img) {
         try {

@@ -20,8 +20,15 @@ public class LifeUIMain extends Application {
 
         primaryStage.setTitle("LIFE");
         var img = new Image(getClass().getResourceAsStream("Icon.png"));
-        //Utils.setDockIconImage(img);
         primaryStage.getIcons().add(img);
+
+        // Seems like the only "correct" way to set Dock Image is via packaging
+        // (so not during debugging)
+        // However, here is a hackish way to do it directly from Java code (via reflection)
+        // Not using it here (among other problems, it'll inflate size of packaged app)
+        // but keep info here just in case
+        // Utils.setDockIconImage(img);
+
 
         final Scene scene = new Scene(root, root.getPrefWidth(), root.getPrefHeight());
         scene.widthProperty().addListener((__, oldWidth, newWidth) -> controller.resize());
