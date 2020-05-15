@@ -2,9 +2,12 @@
   <property name="class-dir" value="build/classes"/>
   <property name="lib-dir" value="build/lib"/>
   <property name="jar-dir" value="build/jar"/>
+  <property name="fxlib" value="${user.home}/Apps/javafx-sdk-14.0.1/lib"/>
+  <property name="native-lib" value="liblifenative.dylib"/>
+  <property name="main-jar" value="lifefx.jar"/>
 
   <path id="classpath">
-    <fileset dir="${user.home}/Apps/javafx-sdk-14.0.1/lib" includes="*.jar"/>
+    <fileset dir="${fxlib}" includes="*.jar"/>
   </path>
 
   <target name="clean">
@@ -14,21 +17,25 @@
   <target name="compile">
     <mkdir dir="${class-dir}"/>
     <javac includeantruntime="false" debug="true" classpathref="classpath" srcdir="src" destdir="${class-dir}">
+      <exclude name="**/Utils.java"/>
       <compilerarg value="-Xlint:deprecation"/>
     </javac>
   </target>
 
   <target name="build-jar" depends="compile">
     <mkdir dir="${jar-dir}"/>
-    <jar destfile="${jar-dir}/lifefx.jar">
+    <jar destfile="${jar-dir}/${main-jar}">
       <fileset dir="${class-dir}"/>
       <fileset dir="resources"/>
+      <manifest>
+        <attribute name="Main-Class" value="net.inet_lab.life.ui.LifeUIMain"/>
+      </manifest>
     </jar>
   </target>
 
   <target name="copy-libs">
     <mkdir dir="${lib-dir}"/>
-    <copy file="../jni/liblifenative.dylib" todir="${lib-dir}"/>
+    <copy file="../jni/${native-lib}" todir="${lib-dir}"/>
   </target>
 
   <target name="build" depends="build-jar,copy-libs"/>
@@ -37,10 +44,104 @@
     <java classname="net.inet_lab.life.ui.LifeUIMain" fork="true">
       <classpath>
         <path refid="classpath"/>
-        <path location="${jar-dir}/lifefx.jar"/>
+        <path location="${jar-dir}/${main-jar}"/>
       </classpath>
       <sysproperty key="java.library.path" value="${lib-dir}"/>
       <jvmarg line="--module-path ${user.home}/Apps/javafx-sdk-14.0.1/lib --add-modules javafx.controls,javafx.fxml"/>
     </java>
+  </target>
+
+  <!-- Experimental jpackage -->
+  <property environment="env"/>
+  <property name="pkg-dir" value="build/package"/>
+  <property name="jre-dir" value="build/jre"/>
+  <property name="java-modules" value="java.base,java.prefs,javafx.controls,javafx.fxml"/>
+  <property name="javafx-dylib" value="libprism_es2.dylib,libglass.dylib,libjavafx_font.dylib"/>
+  <property name="app-name" value="lifefx"/>
+  <property name="app-type" value="app-image"/> <!-- Valid options on Mac: "app-image", "dmg", "pkg" -->
+
+  <target name="jdeps" depends="build-jar">
+    <echo message="Compare with preset list of modules"/>
+    <echo message="${java-modules}"/>
+    <echo message=""/>
+    <exec executable="${env.JAVA_HOME}/bin/jdeps" failonerror="true">
+      <arg value="--module-path"/>
+      <arg value="${fxlib}"/>
+      <arg value="--print-module-deps"/>
+      <arg value="${jar-dir}/${main-jar}"/>
+    </exec>
+  </target>
+
+  <target name="check-jre-dir-exists">
+    <available file="${jre-dir}/bin/java" property="jre-dir-exists"/>
+  </target>
+
+  <target name="report-jre-dir-exists" depends="check-jre-dir-exists" if="jre-dir-exists">
+    <echo message="File '${jre-dir}/bin/java' exists, not running jlink"/>
+  </target>
+
+  <target name="jlink" depends="report-jre-dir-exists,jdeps" unless="jre-dir-exists">
+    <exec executable="${env.JAVA_HOME}/bin/jlink" failonerror="true">
+      <!-- optimization, might turn off when testing -->
+      <arg value="--no-header-files"/>
+      <arg value="--no-man-pages"/>
+      <arg value="--compress=2"/>
+      <arg value="--strip-debug"/>
+      <!-- end of optimization block -->
+      <arg value="--module-path"/>
+      <arg value="${fxlib}"/>
+      <arg value="--add-modules"/>
+      <arg value="${java-modules}"/>
+      <arg value="--output"/>
+      <arg value="${jre-dir}"/>
+    </exec>
+  </target>
+
+  <target name="copy-dylib" unless="jre-dir-exists">
+    <copy todir="${jre-dir}/lib">
+      <fileset dir="${fxlib}" includes="${javafx-dylib}"/>
+      <fileset dir="../jni" includes="${native-lib}"/>
+    </copy>
+  </target>
+
+  <target name="jlink-test" depends="build-jar,jlink,copy-dylib">
+    <exec executable="${jre-dir}/bin/java" failonerror="true">
+      <arg value="-Djavafx.verbose=true"/>
+      <arg value="-Dprism.verbose=true"/>
+      <arg value="-jar"/>
+      <arg value="${jar-dir}/${main-jar}"/>
+    </exec>
+
+  </target>
+  <target name="jlink-cmp-test" depends="build-jar">
+    <exec executable="${env.JAVA_HOME}/bin/java" failonerror="true">
+      <arg value="-Djavafx.verbose=true"/>
+      <arg value="-Dprism.verbose=true"/>
+      <arg value="--module-path"/>
+      <arg value="${fxlib}"/>
+      <arg value="--add-modules"/>
+      <arg value="javafx.controls,javafx.fxml"/>
+      <arg value="-jar"/>
+      <arg value="${jar-dir}/${main-jar}"/>
+    </exec>
+  </target>
+
+  <target name="package" depends="build-jar,jlink,copy-dylib">
+    <exec executable="${env.JAVA_HOME}/bin/jpackage" failonerror="true">
+      <arg value="-n"/>
+      <arg value="${app-name}"/>
+      <arg value="-i"/>
+      <arg value="${jar-dir}"/>
+      <arg value="--main-jar"/>
+      <arg value="${main-jar}"/>
+      <arg value="-d"/>
+      <arg value="${pkg-dir}"/>
+      <arg value="--runtime-image"/>
+      <arg value="${jre-dir}"/>
+      <arg value="--file-associations"/>
+      <arg value="fileassoc.properties"/>
+      <arg value="--type"/>
+      <arg value="${app-type}"/>
+    </exec>
   </target>
 </project>
