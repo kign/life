@@ -127,6 +127,8 @@
   </target>
 
   <target name="package" depends="build-jar,jlink,copy-dylib">
+    <delete dir="${pkg-dir}"/>
+
     <exec executable="${env.JAVA_HOME}/bin/jpackage" failonerror="true">
       <arg value="-n"/>
       <arg value="${app-name}"/>
@@ -138,8 +140,8 @@
       <arg value="${pkg-dir}"/>
       <arg value="--runtime-image"/>
       <arg value="${jre-dir}"/>
-      <arg value="--file-associations"/>
-      <arg value="fileassoc.properties"/>
+      <arg value="--icon"/>
+      <arg value="ligefx.icns"/>
       <arg value="--type"/>
       <arg value="${app-type}"/>
     </exec>
