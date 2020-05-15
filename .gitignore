@@ -4,6 +4,7 @@
 /lifefx/out
 /lifefx/build
 /jni/out
+/pni/build
 
 .DS_Store
 *.dylib
