@@ -1,29 +1,60 @@
 #include <Python.h>
 
+#include "liferun.h"
+
+struct _run_cb_data {
+	int foo;
+};
+
+static void run_cb_func (void * _cb_data, int iter, int count, void * f, int fin, int * p_stop) {
+	struct _run_cb_data * cb_data = _cb_data;
+}
+
 static PyObject * method_run(PyObject *self, PyObject *args) {
-	int X, Y;
-	PyObject *_Fin, *Fin;
+	int X, Y, n_threads, n_steps, n_iter;
+	struct _run_cb_data run_cb_data;
+	liferun_cb_t  run_cb_struct;
+	PyObject *Fin, *Fout;
 
-    /* Parse arguments */
-    if(!PyArg_ParseTuple(args, "iiO", &X, &Y, &_Fin)) {
-        return NULL;
+    if(!PyArg_ParseTuple(args, "iiiiOO", &X, &Y, &n_threads, &n_steps, &Fin, &Fout)) {
+    	fprintf(stderr, "method_run: cannot parse arguments\n");
+        Py_RETURN_NONE;
     }
 
-    Fin = PySequence_Fast(_Fin, "argument must be iterable");
-
-    if(!Fin)
-        return NULL;
-
-    fprintf(stderr, "X = %d, Y = %d\n", X, Y);
-
-    for (int i = 0; i < X * Y; i ++) {
-    	PyObject *b = PySequence_Fast_GET_ITEM(Fin, i);
-
-    	fprintf(stderr, "%d: %d\n", i, b == Py_True);
+    if (!PyList_Check(Fin)) {
+    	fprintf(stderr, "Third argument is not a List\n");
+    	Py_RETURN_NONE;
     }
 
-    Py_DECREF(Fin);
-    return NULL;
+    if (PyList_Size(Fin) < X * Y) {
+    	fprintf(stderr, "Incoming list size is %ld, expecting at least %d\n", PyList_Size(Fin), X*Y);
+    	Py_RETURN_NONE;
+    }
+
+    if (PyList_Size(Fout) < X * Y) {
+    	fprintf(stderr, "Incoming list size is %ld, expecting at least %d\n", PyList_Size(Fin), X*Y);
+    	Py_RETURN_NONE;
+    }
+
+//    fprintf(stderr, "X = %d, Y = %d\n", X, Y);
+    unsigned char * cells_in = malloc(X*Y);
+    unsigned char * cells_out = malloc(X*Y);
+
+    for (int i = 0; i < X * Y; i ++)
+    	cells_in[i] = Py_True == PyList_GetItem(Fin, i);
+
+    run_cb_struct.cb_ptr = run_cb_func;
+    run_cb_struct.cb_data = &run_cb_data;
+
+	n_iter = life_run (cells_in, cells_out, X, Y, n_steps, &run_cb_struct);
+
+	for (int i = 0; i < X * Y; i ++)
+		PyList_SetItem(Fout, i, PyBool_FromLong(cells_out[i]));
+
+	free(cells_in);
+	free(cells_out);
+
+    return PyLong_FromLong(n_iter);
 }
 
 static PyMethodDef life_methods[] = {

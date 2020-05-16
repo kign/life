@@ -1,5 +1,8 @@
 from distutils.core import setup, Extension
 
+# Build with this command:
+# python3 setup.py build_ext -I ../lib -L ../lib -lliferun && python3 setup.py install
+
 def main():
     setup(name="life",
           version="1.0.0",
