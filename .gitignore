@@ -10,3 +10,4 @@
 *.dylib
 *.o
 *.a
+__pycache__
