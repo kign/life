@@ -50,7 +50,7 @@ struct _run_cb_data {
    jbooleanArray Fout;
 };
 
-static void run_cb(void * _cb_data, int iter, int count, void * f, int fin, int * p_stop) {
+static void run_cb(void * _cb_data, int iter, int count, unsigned hash, void * f, int fin, int * p_stop) {
    *p_stop = 0;
 
    if (iter == 0)
