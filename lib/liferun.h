@@ -1,5 +1,5 @@
 typedef struct _liferun_cb {
-	void (* cb_ptr)(void * cb_data, int iter, int count, void * f, int fin, int * p_stop);
+	void (* cb_ptr)(void * cb_data, int iter, int count, unsigned hash, void * f, int fin, int * p_stop);
 	void * cb_data;
 } liferun_cb_t;
 

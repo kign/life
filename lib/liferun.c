@@ -42,7 +42,7 @@ int life_run (
    int iter = 0;
    int stop = 0;
    if (cb != NULL)
-      (*cb->cb_ptr)(cb->cb_data, iter, lstat.count, f1, 0, &stop);
+      (*cb->cb_ptr)(cb->cb_data, iter, lstat.count, lstat.hash, f1, 0, &stop);
 
    htrail[0] = lstat.hash;
    //fprintf(stderr, "hash %d: 0x%08X\n", iter, lstat.hash);
@@ -60,7 +60,7 @@ int life_run (
       for (; i < N_htrail && htrail[i] != lstat.hash; i ++);
 
       if (cb != NULL)
-         (*cb->cb_ptr)(cb->cb_data, iter, lstat.count, f1,
+         (*cb->cb_ptr)(cb->cb_data, iter, lstat.count, lstat.hash, f1,
                         iter == n_steps || i < N_htrail, &stop);
       if (stop || i < N_htrail)
          break;
