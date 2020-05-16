@@ -16,10 +16,14 @@ def test() :
 ..........
 """)
 
-	#print(X, Y, start)
-	#print(lifeutils.savet(X, Y, start))
 	end = [False] * X * Y
-	res = life.run(X, Y, 1, 100, start, end)
+	p_cnt = [0]
+	def callback(liter, count, lhash, f, fin) :
+		assert p_cnt[0] == liter
+		p_cnt[0] += 1
+		assert fin == (liter == 100)
+
+	res = life.run(X, Y, 1, 100, start, end, callback)
 
 	print(lifeutils.savet(X, Y, end), end='')
 
