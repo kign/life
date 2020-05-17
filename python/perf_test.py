@@ -14,7 +14,7 @@ def get_args () :
     default_density = 0.3
     default_iterations = 1_000
 
-    parser = argparse.ArgumentParser(description="My utility template")
+    parser = argparse.ArgumentParser(description="Performance/density testing of Life")
     parser.add_argument('--log', dest='log_level', help="Logging level (default = %s)" % default_log_level,
                         choices=['debug', 'info', 'warning', 'error', 'critical'],
                         default=default_log_level)
