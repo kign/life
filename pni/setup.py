@@ -1,15 +1,7 @@
 from distutils.core import setup, Extension
 
-# Build with this command:
-# python3 setup.py build_ext -I ../lib -L ../lib -lliferun && python3 setup.py install
+mod_life = Extension('conway_life',
+      include_dirs = ['../lib'],
+      sources = ['python_life.c', '../lib/liferun.c', '../lib/lifestep.c'])
 
-def main():
-    setup(name="life",
-          version="1.0.0",
-          description="Python interface for game of life",
-          author="Konstantin Ignatiev",
-          author_email="kostya@gmail.com",
-          ext_modules=[Extension("life", ["python_life.c"])])
-
-if __name__ == "__main__":
-    main()
+setup(ext_modules=[mod_life])
