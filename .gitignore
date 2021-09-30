@@ -5,9 +5,12 @@
 /lifefx/build
 /jni/out
 /pni/build
+/pni/dist
+/pni/lib
 
 .DS_Store
 *.dylib
 *.o
 *.a
 __pycache__
+*.egg-info/
