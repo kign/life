@@ -24,6 +24,7 @@ int life_run (
 
    unsigned * htrail = calloc(N_htrail, sizeof(unsigned));
 
+   /*
    if (0) {
       fprintf(stderr, "start of life_run (pics)");
       for (int i = 0; i < X * Y; i ++) {
@@ -33,13 +34,14 @@ int life_run (
       }
       fprintf(stderr, "\n");
    }
+   */
 
-   for (int i = 0; i < X * Y; i ++)
+   for (unsigned  i = 0; i < X * Y; i ++)
       f1[i] = cells_in[i];
 
    life_prepare (f1, X, Y, &lstat);
 
-   int iter = 0;
+   unsigned iter = 0;
    int stop = 0;
    if (cb != NULL)
       (*cb->cb_ptr)(cb->cb_data, iter, lstat.count, lstat.hash, f1, 0, &stop);
@@ -68,7 +70,7 @@ int life_run (
    }
 
    if (cells_out != NULL) {
-      for (int i = 0; i < X * Y; i ++)
+      for (unsigned i = 0; i < X * Y; i ++)
          cells_out[i] = OCCUPIED(f1[i]);
    }
 
