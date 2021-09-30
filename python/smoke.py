@@ -3,7 +3,7 @@ import life
 import lifeutils
 
 def test() :
-	X, Y, start = lifeutils.readt("""\
+    X, Y, start = lifeutils.readt("""\
 ..........
 ......x...
 ....xxx...
@@ -16,18 +16,18 @@ def test() :
 ..........
 """)
 
-	end = [False] * X * Y
-	p_cnt = [0]
-	def callback(liter, count, lhash, f, fin) :
-		assert p_cnt[0] == liter
-		p_cnt[0] += 1
-		assert fin == (liter == 100)
+    end = [False] * X * Y
+    p_cnt = [0]
+    def callback(liter, count, lhash, f, fin) :
+        assert p_cnt[0] == liter
+        p_cnt[0] += 1
+        assert fin == (liter == 100)
 
-	res = life.run(X, Y, 1, 100, start, end, callback)
+    res = life.run(X, Y, 1, 100, start, end, callback)
 
-	print(lifeutils.savet(X, Y, end), end='')
+    print(lifeutils.savet(X, Y, end), end='')
 
-	assert lifeutils.savet(X, Y, end) == """\
+    assert lifeutils.savet(X, Y, end) == """\
 ..........
 ..x.......
 .x.x......
@@ -40,10 +40,10 @@ def test() :
 ..........
 """
 
-	assert res == 100
+    assert res == 100
 
-	print("Passed")
+    print("Passed")
 
 
 if __name__ == "__main__" :
-	test()
+    test()
