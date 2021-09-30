@@ -10,6 +10,7 @@ struct _run_cb_data {
 static void run_cb_func (void * _cb_data, int iter, int count, unsigned hash, void * f, int fin, int * p_stop) {
 	struct _run_cb_data * cb_data = _cb_data;
 
+	/* i = "int", I = "unsigned int", k = "unsigned long", b = "unsigned char" */
 	PyObject *py_args = Py_BuildValue("(iiIkb)", iter, count, hash, (unsigned long)f, (char)fin);
 
 	if (py_args == NULL) {
@@ -40,7 +41,9 @@ static PyObject * method_run(PyObject *self, PyObject *args) {
 	liferun_cb_t  run_cb_struct;
 	PyObject *py_Fin, *py_Fout, *py_cb;
 
-    if(!PyArg_ParseTuple(args, "iiiiOOO", &X, &Y, &n_threads, &n_steps, &py_Fin, &py_Fout, &py_cb)) {
+	/* i = "int", O = "object" */
+    if(!PyArg_ParseTuple(args, "iiiiOOO", &X, &Y, &n_threads, &n_steps,
+    	&py_Fin, &py_Fout, &py_cb)) {
     	fprintf(stderr, "method_run: cannot parse arguments\n");
         Py_RETURN_NONE;
     }
@@ -92,8 +95,26 @@ static PyObject * method_run(PyObject *self, PyObject *args) {
     return PyLong_FromLong(n_iter);
 }
 
+static PyObject * method_read_ptr(PyObject *self, PyObject *args) {
+	int X, Y;
+	PyObject *py_F;
+	unsigned char * cells;
+
+	/* k = "unsigned long", O = "object"  */
+    if(!PyArg_ParseTuple(args, "iikO", &X, &Y, &cells, &py_F)) {
+    	fprintf(stderr, "method_run: cannot parse arguments\n");
+        Py_RETURN_NONE;
+    }
+
+	for (int i = 0; i < X * Y; i ++)
+		PyList_SetItem(py_F, i, PyBool_FromLong(cells[i]));
+
+    return PyLong_FromLong(1);
+}
+
 static PyMethodDef life_methods[] = {
-    {M_RUN, method_run, METH_VARARGS, RUN_DOC},
+    {M_RUN, 	 method_run, 	  METH_VARARGS, RUN_DOC},
+    {M_READ_PTR, method_read_ptr, METH_VARARGS, READ_PTR_DOC},
     {NULL, NULL, 0, NULL}
 };
 

@@ -17,11 +17,28 @@ def test() :
 """)
 
     end = [False] * X * Y
+    cur = [False] * X * Y
     p_cnt = [0]
-    def callback(liter, count, lhash, f, fin) :
+    def callback(liter, count, lhash, pos_ptr, fin) :
         assert p_cnt[0] == liter
         p_cnt[0] += 1
         assert fin == (liter == 100)
+
+        life.read_ptr(X, Y, pos_ptr, cur)
+
+        if liter == 50 :
+            lifeutils.savet(X, Y, cur) == """\
+x...x...x.
+..x.......
+..........
+......x...
+x...x...x.
+..x...x...
+..........
+..........
+x...x...x.
+..x...x...
+"""
 
     res = life.run(X, Y, 1, 100, start, end, callback)
 
