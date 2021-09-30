@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-import life
+import conway_life as life
 import lifeutils
 
 def test() :
@@ -25,9 +25,10 @@ def test() :
 
     res = life.run(X, Y, 1, 100, start, end, callback)
 
-    print(lifeutils.savet(X, Y, end), end='')
+    s_end = lifeutils.savet(X, Y, end)
+    print(s_end, end='')
 
-    assert lifeutils.savet(X, Y, end) == """\
+    assert s_end == """\
 ..........
 ..x.......
 .x.x......
