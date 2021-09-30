@@ -1,0 +1,29 @@
+
+
+[run]
+life.run(width, height, n_threads, n_iters, pos_start, pos_end, calllback)
+
+    with:       Width of the board; integer
+    height:     Height of the board; integer
+    n_threads:  Number of worker threads (not yet supported); integer
+    n_iters:    Number of iterations to run; integer
+    pos_start:  Initial position; boolean array of size width*height
+    pos_end:    Final position; boolean array of size width*height. Must be pre-allocated.
+    callback:   Iteration calllback (or None). It is invoked like this:
+
+callback(n_iter, count, bhash, pos_ptr, fin)
+
+	n_iter:     current iteration (see below); integer
+	count:      count of cells; integer
+	bhash:      hash of current position; integer
+	pos_ptr:    internal memory pointer to the current position; integer
+	fin:        1 if this is final iteration, 0 if not
+
+Notes: (1) callback (if defined) is called *before* first iteration, and then
+again *after* every iterations, including the last (where fin=1). Therefore,
+*normally* callback method is called (1 + n_iters) times.
+
+(2) However this method also detects loops and if your sequence deteriorates
+to a loop, it will cut it short; `fin` would still be set to 1 on the last
+iteration only regardless. Hash values used in loop detection is passed
+to the callback.

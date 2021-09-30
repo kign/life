@@ -1,6 +1,7 @@
 #include <Python.h>
 
 #include "liferun.h"
+#include "pydoc.h"
 
 struct _run_cb_data {
 	PyObject * py_cb;
@@ -92,18 +93,19 @@ static PyObject * method_run(PyObject *self, PyObject *args) {
 }
 
 static PyMethodDef life_methods[] = {
-    {"run", method_run, METH_VARARGS, "Run provided board"},
+    {M_RUN, method_run, METH_VARARGS, RUN_DOC},
     {NULL, NULL, 0, NULL}
 };
 
 static struct PyModuleDef life_module = {
     PyModuleDef_HEAD_INIT,
     "life",
+    /* description should probably match file setup.cfg */
     "Python interface for game of life",
     -1,
     life_methods
 };
 
-PyMODINIT_FUNC PyInit_life(void) {
+PyMODINIT_FUNC PyInit_conway_life(void) {
     return PyModule_Create(&life_module);
 }
