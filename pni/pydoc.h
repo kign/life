@@ -3,12 +3,12 @@
 #define M_RUN "run"
 #define RUN_DOC "run(width, height, n_threads, n_iters, pos_start, pos_end, calllback)\n" \
 "\n" \
-"    with:       Width of the board; integer\n" \
+"    width:      Width of the board; integer\n" \
 "    height:     Height of the board; integer\n" \
 "    n_threads:  Number of worker threads (not yet supported); integer\n" \
 "    n_iters:    Number of iterations to run; integer\n" \
-"    pos_start:  Initial position; boolean array of size width*height\n" \
-"    pos_end:    Final position; boolean array of size width*height. Must be pre-allocated.\n" \
+"    pos_start:  Initial position; boolean list of size width*height\n" \
+"    pos_end:    (Output) Final position; boolean list of size width*height. Must be pre-allocated.\n" \
 "    callback:   Iteration calllback, or None (see below)\n" \
 "\n" \
 "    return value: number of actually executed iterations\n" \
@@ -19,7 +19,7 @@
 "    n_iter:     current iteration (see below); integer\n" \
 "    count:      count of cells; integer\n" \
 "    bhash:      hash of current position; integer\n" \
-"    pos_ptr:    internal memory pointer to the current position; integer\n" \
+"    pos_ptr:    (Output) Internal memory pointer to the current position; integer\n" \
 "                    method `read_ptr` can be used to extract the position\n" \
 "    fin:        1 if this is final iteration, 0 if not\n" \
 "\n" \
@@ -37,9 +37,10 @@
 #define M_READ_PTR "read_ptr"
 #define READ_PTR_DOC "read_ptr(width, height, pos_ptr, position)\n" \
 "\n" \
-"    with:       Width of the board; integer\n" \
+"    width:      Width of the board; integer\n" \
 "    height:     Height of the board; integer\n" \
-"    pos_ptr:    internal memory pointer returned in a callback (see method `run`); integer\n" \
-"    position:   intermediary position; boolean array of size width*height.\n" \
-"                    Must be pre-allocated.\n"
+"    pos_ptr:    Internal memory pointer returned in a callback (see method `run`); integer\n" \
+"    position:   (Output) Intermediary position; boolean list of size width*height.\n" \
+"                    Must be pre-allocated.\n" \
+"    return value: 1 on success\n"
 

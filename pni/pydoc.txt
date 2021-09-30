@@ -3,12 +3,12 @@
 [run]
 run(width, height, n_threads, n_iters, pos_start, pos_end, calllback)
 
-    with:       Width of the board; integer
+    width:      Width of the board; integer
     height:     Height of the board; integer
     n_threads:  Number of worker threads (not yet supported); integer
     n_iters:    Number of iterations to run; integer
-    pos_start:  Initial position; boolean array of size width*height
-    pos_end:    Final position; boolean array of size width*height. Must be pre-allocated.
+    pos_start:  Initial position; boolean list of size width*height
+    pos_end:    (Output) Final position; boolean list of size width*height. Must be pre-allocated.
     callback:   Iteration calllback, or None (see below)
 
     return value: number of actually executed iterations
@@ -19,7 +19,7 @@ callback(n_iter, count, bhash, pos_ptr, fin)
     n_iter:     current iteration (see below); integer
     count:      count of cells; integer
     bhash:      hash of current position; integer
-    pos_ptr:    internal memory pointer to the current position; integer
+    pos_ptr:    (Output) Internal memory pointer to the current position; integer
                     method `read_ptr` can be used to extract the position
     fin:        1 if this is final iteration, 0 if not
 
@@ -37,8 +37,9 @@ to the callback.
 [read_ptr]
 read_ptr(width, height, pos_ptr, position)
 
-    with:       Width of the board; integer
+    width:      Width of the board; integer
     height:     Height of the board; integer
-    pos_ptr:    internal memory pointer returned in a callback (see method `run`); integer
-    position:   intermediary position; boolean array of size width*height.
+    pos_ptr:    Internal memory pointer returned in a callback (see method `run`); integer
+    position:   (Output) Intermediary position; boolean list of size width*height.
                     Must be pre-allocated.
+    return value: 1 on success
