@@ -30,6 +30,7 @@ static void run_cb_func (void * _cb_data, int iter, int count, unsigned hash, vo
 
 	*p_stop = res == 1;
 
+	/* Py_XDECREF has additional NULL check */
 	Py_XDECREF(py_res);
     Py_DECREF(py_args);
 }
@@ -100,7 +101,7 @@ static PyObject * method_read_ptr(PyObject *self, PyObject *args) {
 	PyObject *py_F;
 	unsigned char * cells;
 
-	/* k = "unsigned long", O = "object"  */
+	/* i = "int", k = "unsigned long", O = "object"  */
     if(!PyArg_ParseTuple(args, "iikO", &X, &Y, &cells, &py_F)) {
     	fprintf(stderr, "method_run: cannot parse arguments\n");
         Py_RETURN_NONE;
