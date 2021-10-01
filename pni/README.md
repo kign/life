@@ -4,6 +4,14 @@ Python wrapper for C implementation of Conway's Game of Life algorithm.
 
 This only provides low-level utilities.
 
+## Installation
+
+Use PyPi package [conway-life](https://pypi.org/project/conway-life/)
+
+```bash
+python3 -m pip install --upgrade conway-life
+```
+
 ## Design notes
 
 None of the methods allocate any Python objects; output objects must be created by caller.
