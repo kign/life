@@ -21,6 +21,12 @@ static void run_cb_func (void * _cb_data, int iter, int count, unsigned hash, vo
 	}
 
 	PyObject *py_res = PyEval_CallObject(cb_data->py_cb, py_args);
+
+	if (PyErr_Occurred() != NULL) {
+		PyErr_PrintEx(1);
+		exit(1);
+	}
+
 	long res = 0;
 	if (PyLong_CheckExact(py_res))
 		res = PyLong_AsLong(py_res);
