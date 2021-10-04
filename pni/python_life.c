@@ -1,6 +1,8 @@
 #include <Python.h>
 
+#include "lifestep.h"
 #include "liferun.h"
+
 #include "pydoc.h"
 
 struct _run_cb_data {
@@ -99,7 +101,7 @@ static PyObject * method_run(PyObject *self, PyObject *args) {
 static PyObject * method_read_ptr(PyObject *self, PyObject *args) {
 	int X, Y;
 	PyObject *py_F;
-	unsigned char * cells;
+	cell_t * cells;
 
 	/* i = "int", k = "unsigned long", O = "object"  */
     if(!PyArg_ParseTuple(args, "iikO", &X, &Y, &cells, &py_F)) {
@@ -108,7 +110,7 @@ static PyObject * method_read_ptr(PyObject *self, PyObject *args) {
     }
 
 	for (int i = 0; i < X * Y; i ++)
-		PyList_SetItem(py_F, i, PyBool_FromLong(cells[i]));
+		PyList_SetItem(py_F, i, PyBool_FromLong(1 == cells[i]));
 
     return PyLong_FromLong(1);
 }

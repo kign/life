@@ -7,7 +7,8 @@
 /pni/build
 /pni/dist
 /pni/lib
-
+/py-web/dist
+/py-web/build
 .DS_Store
 *.dylib
 *.o
