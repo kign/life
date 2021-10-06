@@ -175,7 +175,7 @@ def start() :
 
     os.chdir(os.path.dirname(__file__))
 
-    default_log_level = "debug"
+    default_log_level = "warning"
     default_port = 13882
     default_box = 20
 
@@ -187,8 +187,9 @@ def start() :
     parser.add_argument('-p', '--port', type=int, default=default_port, help="Port (default = %s)" % default_port)
     parser.add_argument('--cell', '--size', metavar='PIXELS', type=int, dest='g_box', default=default_box,
         help=f"Size of cell in pixels (default = {default_box})")
-    parser.add_argument('--space', type=int, metavar='PIXELS', dest='g_spc', help="Spacing between cell in pixels")
-    parser.add_argument('--padding', metavar='PIXELS', type=int, dest='g_pad', help="Padding in pixels")
+    parser.add_argument('--space', type=int, metavar='PIXELS', dest='g_spc', help="Spacing between cells in pixels")
+    parser.add_argument('--padding', metavar='PIXELS', type=int, dest='g_pad',
+        help="Canvas padding in pixels")
     parser.add_argument('-d', '--dev', action='store_true', dest='dev_mode',
         help='Regular Flask mode with reloader')
 

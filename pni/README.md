@@ -3,13 +3,16 @@
 Python wrapper for C implementation of Conway's Game of Life algorithm.
 
 This only provides low-level utilities. It is intended to be used as a dependency for higher-level
-pure Python packages.
-
-## Other packages
-
- *
+pure Python packages; as of this update, they are:
 
 
+
+<table>
+  <tr>
+    <td><A href="https://pypi.org/project/life-web-ui/">life-web-ui</A></td>
+    <td>Web UI for Conway Game of Life</td>
+  </tr>
+</table>
 
 ## Installation
 
@@ -29,7 +32,7 @@ garbage collection for large objects.
 
 #### run(width, height, n_threads, n_iters, pos_start, pos_end, calllback)
 
-`width`:       Width of the board; *integer*<br>
+`width`:      Width of the board; *integer*<br>
 `height`:     Height of the board; *integer*<br>
 `n_threads`:  Number of worker threads (not yet supported); *integer*<br>
 `n_iters`:    Number of iterations to run; *integer*<br>
