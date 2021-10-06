@@ -2,7 +2,14 @@
 
 Python wrapper for C implementation of Conway's Game of Life algorithm.
 
-This only provides low-level utilities.
+This only provides low-level utilities. It is intended to be used as a dependency for higher-level
+pure Python packages.
+
+## Other packages
+
+ *
+
+
 
 ## Installation
 
