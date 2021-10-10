@@ -300,10 +300,15 @@ const LifeControls = (function () {
             }
 
             ctrl.random_button.onclick = function () {
-                const density = parseFloat(ctrl.random_value.value);
+                let density = parseFloat(ctrl.random_value.value);
                 if (isNaN(density) || density<=0 || density>=1) {
-                    alert(`Invalid density value ${ctrl.random_value.value}`);
-                    return;
+                    const sden = window.prompt("Density (number bwtween 0 and 1)", "0.3");
+                    if (!sden) return;
+                    density = parseFloat(sden);
+                    if (isNaN(density) || density<=0 || density>=1) {
+                        alert(`Invalid density value ${sden}`);
+                        return;
+                    }
                 }
 
                 randomize(X, Y, density);
