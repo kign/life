@@ -8,7 +8,6 @@ app.config['SECRET_KEY'] = '4W5rgr7TYNTQFIzhWFQ1-xDbGfSKNlcqbgHsg7DrE'
 
 @app.route('/')
 def home() :
-    print("Exists?", os.path.exists('life-web.html'))
     try :
         return render_template('life-web.html')
     except Exception as err :
@@ -44,7 +43,8 @@ def start() :
     life_wat = "life.wat"
     logging.info("Compiling %s", life_wat)
 
-    subprocess.check_call(["wat2wasm", '--enable-bulk-memory', life_wat, '-o', os.path.join('..', 'docs', life_wat.replace('.wat', '.wasm'))])
+    subprocess.check_call(["wat2wasm", '--enable-bulk-memory', life_wat, '-o',
+                os.path.join('..', 'docs', life_wat.replace('.wat', '.wasm'))])
 
     Thread(target=open_browser_thread, args=(port,)).start ()
 
