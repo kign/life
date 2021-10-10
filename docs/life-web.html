@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="shortcut icon" href="Icon.png" type="image/x-icon">
+    <link rel="icon" href="Icon.png" type="image/x-icon">
+    <title>Game of Life</title>
+	<script src="life-web.js"></script>
+	<style type="text/css">
+td#controls > * {
+	display: block;
+	margin-bottom: 10px;
+}
+td#controls > span {
+	font-style: italic;
+}
+	</style>
+</head>
+<body>
+<table style="width: 100%;">
+	<tr>
+		<td>
+			<!-- tabindex allows canvas to receive focus (and keyboard events), but we aren't using it anyway -->
+			<canvas id="myCanvas" tabindex='1'
+				style="border:1px solid #000000; width: 100%; height: 100%">
+			</canvas>
+		</td>
+		<td id="controls" style="vertical-align: top;">
+			<button id="bt-step">Step</button>
+			<button id="bt-walk">Walk</button>
+			<button id="bt-run">Run</button>
+			<span>Interval</span>
+			<input title="Interval in seconds" id="txt-int" type="text" style="width: 8ex;">
+			<div>
+				Gen <span id="lb-gen">1</span>
+			</div>
+			<hr>
+			<button id="bt-reset">Reset</button>
+			<button id="bt-random">Random</button>
+			<span>Density</span>
+			<input title="Density" id="txt-random" type="text" style="width: 8ex;">
+		</td>
+	</tr>
+</table>
+<script>
+	const [X, Y] = LifeCanvas.init("myCanvas");
+	const pages = Math.ceil(X * Y/64000);
+	const memory = new WebAssembly.Memory({initial:pages, maximum:pages});
+	const wasm_log = (a,b) => console.log(`wasm[${a}] ${b}`);
+
+    const wasm_src = 'life.wasm';
+    fetch(wasm_src).then(response => {
+        if (response.status != 200)
+            alert(`File ${wasm_src} returned status ${response.status}`);
+        return response.arrayBuffer()
+    }).then(bytes => {
+        return WebAssembly.instantiate(bytes, { js: { mem: memory, log: wasm_log, callback: LifeControls.callback } });
+    }).then(m => {
+        console.log("Loaded", wasm_src);
+		LifeControls.init(X, Y, m.instance.exports.run, new Uint32Array(memory.buffer),
+			{step: 'bt-step', walk: 'bt-walk', run: 'bt-run', int: 'txt-int', random_button: 'bt-random', random_value: 'txt-random', reset: 'bt-reset', gen: 'lb-gen'}
+		);
+
+    });
+
+</script>
+</body>
+</html>
