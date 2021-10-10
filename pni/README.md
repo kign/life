@@ -117,4 +117,4 @@ To generate distributable packages,
 rm -rf dist build && python3 -m build
 ```
 
-Note that binary packages (`wheel`) made on Linux cannot be uploaded to PyPi. See [PEP 513](https://www.python.org/dev/peps/pep-0513/) and [manylinux](https://github.com/pypa/manylinux).
+Note that binary packages (`wheel`) made on Linux cannot be uploaded to PyPi. See [PEP 513](https://www.python.org/dev/peps/pep-0513/) and [manylinux](https://github.com/pypa/manylinux). There is hardly any need in binary Linux packages though, Linux will happily compile source distribution.
