@@ -86,6 +86,7 @@ class CRun(Common) :
         def callback(liter, count, lhash, f, fin) :
             if liter > 0 :
                 self.dens_a[liter - 1] = count / self.X / self.Y
+            return 0
         return self.life_run(self.X, self.Y, 1, self.iters, self.Fin, self.Fout,
                 callback if use_callback else None)
 
