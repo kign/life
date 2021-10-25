@@ -1,5 +1,6 @@
 (module
 	(import "js" "log" (func $log (param i32) (param i32)))
+	;; callback(X, Y, iteration, hash); return 0 = continue, 1 = stop
 	(import "js" "callback" (func $callback (param i32) (param i32) (param i32) (param i32) (result i32)))
     (memory (import "js" "mem") 1)
     ;; width, height, n_iters -> [actual number of iterations]
