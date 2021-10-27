@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 import os.path, argparse, logging, random, re, time
+from datetime import datetime
 import matplotlib.pyplot as plt
 from inetlab.cli.colorterm import add_coloring_to_emit_ansi
 
@@ -35,8 +36,8 @@ def get_args () :
         dest='density_graph')
 
     parser.add_argument('runtime',
-        help="Use 'c' for C-based conway-life package, or 'wasm' for Web Assembly based engine",
-        choices=["c", "wasm"])
+        help="Use 'native' for C-based conway-life package, wasmtime or wasmer for Web Assembl engines",
+        choices=["native", "wasmtime", "wasmer"])
     parser.add_argument('size_a', nargs='+', help="board size, e.g. 1200x1600",
         metavar="WIDTHxHEIGHT")
 
@@ -66,7 +67,15 @@ class Common :
         self.iters = iters
         self.dens_a = [None] * iters
 
-class CRun(Common) :
+    @staticmethod
+    def getWasmPath() :
+        fname = 'life.wasm'
+        fpath = os.path.join(os.path.dirname(os.path.realpath(__file__)),'..', 'docs', fname)
+        print("File", fname, "last modified",
+            datetime.fromtimestamp(os.path.getmtime(fpath)).strftime('%Y-%m-%d %H:%M:%S'))
+        return fpath
+
+class NativeRun(Common) :
     speed = 1.0
 
     def __init__(self, X, Y, iters, density) :
@@ -90,7 +99,7 @@ class CRun(Common) :
         return self.life_run(self.X, self.Y, 1, self.iters, self.Fin, self.Fout,
                 callback if use_callback else None)
 
-class CWasm(Common) :
+class CWasmtime(Common) :
     speed = 2.0
 
     def __init__(self, X, Y, iters, density) :
@@ -100,9 +109,7 @@ class CWasm(Common) :
 
         self.store = Store()
 
-        module = Module.from_file(self.store.engine,
-                os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                    '..', 'docs', 'life.wasm'))
+        module = Module.from_file(self.store.engine, self.getWasmPath())
         pages = 2 * (X * Y // 16000 + 1)  # probbaly need to divide by 16384 but OK
         mem = Memory(self.store, MemoryType(Limits(pages, pages)))
 
@@ -112,19 +119,54 @@ class CWasm(Common) :
         def log(param1, param2) :
             print(f"[{param1}] {param2}")
 
-        def callback(X, Y, liter, hash) :
-            # count not yet defined
-            count = 1
+        def callback(X, Y, liter, count, hash) :
             self.dens_a[liter - 1] = count / X / Y
             return 0
 
         log_obj = Func(self.store, FuncType([ValType.i32(), ValType.i32()], []), log)
         callback_obj = Func(self.store,
-            FuncType([ValType.i32(), ValType.i32(), ValType.i32(), ValType.i32()],
+            FuncType([ValType.i32(), ValType.i32(), ValType.i32(), ValType.i32(), ValType.i32()],
                 [ValType.i32()]), callback)
 
         instance = Instance(self.store, module, [log_obj, callback_obj, mem])
         self.life_run = instance.exports(self.store)["run"]
+
+    def run(self, use_callback) :
+        return self.life_run(self.store, self.X, self.Y, self.iters)
+
+class CWasmer(Common) :
+    speed = 1.5
+
+    def __init__(self, X, Y, iters, density) :
+        from wasmer import engine, Store, Module, Instance, Memory, MemoryType, Function, FunctionType, Type
+        from wasmer_compiler_llvm import Compiler
+
+        super().__init__(X, Y, iters)
+
+        self.store = Store(engine.Native(Compiler))
+        #  store = Store(engine.JIT(Compiler))
+
+        module = Module(self.store, open(self.getWasmPath(), 'rb').read())
+
+        pages = 2 * (X * Y // 16000 + 1)  # probbaly need to divide by 16384 but OK
+        mem = Memory(self.store, MemoryType(shared = False, minimum = pages, maximum = pages))
+
+        for idx in range(X * Y) :
+            mem.data_ptr(self.store)[4 * idx] = 1 if random.random() < density else 0
+
+        def log(param1, param2) :
+            print(f"[{param1}] {param2}")
+
+        def callback(X, Y, liter, count, hash) :
+            self.dens_a[liter - 1] = count / X / Y
+            return 0
+
+        log_obj = Function(self.store, log, FunctionType(params=[Type.I32, Type.I32], results=[]))
+        callback_obj = Function(self.store, callback,
+            FunctionType(params=[Type.I32, Type.I32, Type.I32, Type.I32, Type.I32], results=[Type.I32]))
+
+        instance = Instance(module, [log_obj, callback_obj, mem])
+        self.life_run = instance.exports.run
 
     def run(self, use_callback) :
         return self.life_run(self.store, self.X, self.Y, self.iters)
@@ -142,7 +184,7 @@ def main(args) :
             logging.error("Invalid values %s", size)
             exit(1)
 
-        engine = {'c' : CRun, 'wasm' : CWasm}[args.runtime]
+        engine = {'native' : NativeRun, 'wasmtime' : CWasmtime, 'wasmer' : CWasmer}[args.runtime]
         runtime = engine(X, Y, args.iterations, args.density)
 
         estimate = expected_speed * args.iterations * X * Y * engine.speed
