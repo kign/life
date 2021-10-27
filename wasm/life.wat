@@ -1,7 +1,7 @@
 (module
 	(import "js" "log" (func $log (param i32) (param i32)))
-	;; callback(X, Y, iteration, hash); return 0 = continue, 1 = stop
-	(import "js" "callback" (func $callback (param i32) (param i32) (param i32) (param i32) (result i32)))
+	;; callback(X, Y, iteration, count, hash); return 0 = continue, 1 = stop
+	(import "js" "callback" (func $callback (param i32) (param i32) (param i32) (param i32) (param i32) (result i32)))
     (memory (import "js" "mem") 1)
     ;; width, height, n_iters -> [actual number of iterations]
     (func (export "run") (param $X i32) (param $Y i32) (param $reqiter i32) (result i32)
@@ -19,6 +19,7 @@
     	(local $src i32)
     	(local $dst i32)
     	(local $cnt i32)
+    	(local $tcnt i32)
     	(local $cell i32)
     	(local $isrc i32)
     	(local $idst i32)
@@ -123,8 +124,7 @@
     	;; Main iteration loop
     	;;
 
-    	(set_local $iter (i32.const 0))
-
+    	(set_local $iter (i32.const 0))  ;; $iter := 0
     	(block $return (loop $main
     		;; (call $log (i32.const 130) (get_local $iter))
 
@@ -139,6 +139,7 @@
 
     		(memory.fill (i32.mul (i32.const 4) (get_local $dst)) (i32.const 0) (i32.mul (i32.const 4) (get_local $XY)))
 
+	    	(set_local $tcnt (i32.const 0))  ;; $tcnt := 0
 	    	(set_local $hash (i32.const 0))
 	    	(set_local $ii (i32.const -1)) ;; ii := -1
 	    	(block $break (loop $cont
@@ -222,17 +223,29 @@
 				(if (i32.eq (i32.const 1) (i32.load)) (then (set_local $cnt (i32.add (i32.const 1) (get_local $cnt)))))
 				;)
 
+				;; main Conway formula for next-gen of cells
+				;; (exactly 3 neighnours OR exactly 2 neighbours + old cell)
 				(if (i32.or (i32.eq (i32.const 3) (get_local $cnt))
 					(i32.and (i32.eq (i32.const 2) (get_local $cnt))
 						(i32.eq (i32.const 1) (get_local $cell))))
 					(then
 						;; (call $log (i32.const 100) (get_local $idst))
 
+						;; $tcnt += 1
+						;; *** WARNING *** WARNING *** WARNING *** WARNING ***
+						;; For some reason, the next line triggers HUGE performance
+						;; degradation in node.js (up to 10%); тhere in no impact in wasmtime
+						;; It is safe to comment it out, the only result would be
+						;; callback function will always get '0' as 'count'
+						(set_local $tcnt (i32.add (get_local $tcnt) (i32.const 1)))
+
 			    		;; memory[4 * $idst] := 1
 			    		(i32.store (i32.mul (i32.const 4) (get_local $idst)) (i32.const 1))
 
     		    		;; $hash = $hash ^ ($ii * 179424673)
-    					(set_local $hash (i32.xor (get_local $hash) (i32.mul (get_local $idst) (i32.const 179424673))))
+    					(set_local $hash (i32.xor (get_local $hash) (i32.mul (get_local $ii) (i32.const 179424673))))
+    					;; (call $log (i32.const 1) (get_local $ii))
+    					;; (call $log (i32.const 2) (get_local $hash))
 
 						;; push $idst+$dx0+$dy0, $idst+$dx0+$dy1, $idst+$dx1+$dy0, $idst+$dx1+$dy1
 						(i32.add (get_local $idst) (i32.add (get_local $dx0) (get_local $dy0)))
@@ -293,9 +306,6 @@
 						(if (i32.ne (i32.load) (i32.const 1)) (then (i32.store (get_local $jj) (i32.const 2))))
 						;; (call $log (i32.const 10) (i32.div_s (get_local $jj) (i32.const 4)))
 						;; (call $log (i32.const 20) (i32.load (get_local $jj)))
-
-
-
 						))
 
 	    		(br $cont)  ;; continue
@@ -304,7 +314,7 @@
 			;; (call $log (i32.const 0) (get_local $hash))
     		;; (call $log (i32.const 132) (get_local $iter))
 
-			(br_if $return (call $callback (get_local $X) (get_local $Y) (get_local $iter) (get_local $hash)))
+			(br_if $return (call $callback (get_local $X) (get_local $Y) (get_local $iter) (get_local $tcnt) (get_local $hash)))
     		;; (call $log (i32.const 133) (get_local $iter))
 
 			(br_if $return
