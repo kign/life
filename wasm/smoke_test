@@ -2,6 +2,8 @@
 'use strict';
 
 const fs = require('fs');
+const assert = require('assert').strict;
+const path = require('path');
 
 function readt(s) {
     const rows = s.trim().split('\n');
@@ -33,26 +35,50 @@ async function main() {
 ..........
 `);
 
-    const wasm_bytes = new Uint8Array(fs.readFileSync('../docs/life.wasm'));
+    const life_wasm = path.resolve(__dirname, '../docs/life.wasm');
+    console.log("File", 'life.wasm', "last changed",
+        fs.statSync(life_wasm).mtime.toLocaleString('UK'), "local time");
+    const wasm_bytes = new Uint8Array(fs.readFileSync(life_wasm));
     const wasm_log = (a, b) => console.log(`wasm[${a}] ${b}`);
     const pages = Math.ceil(X * Y / 64000);
     const memory = new WebAssembly.Memory({initial: pages,maximum: pages});
+    const mem = new Uint32Array(memory.buffer);
 
-    const callback = function(X, Y, iter, hash) {
+    let iters = 1;
+    const callback = function(cbX, cbY, cbIter, cbCount, cbHash) {
+        //console.log(cbX, cbY, cbIter, cbCount, cbHash);
+        assert.equal(X, cbX);
+        assert.equal(Y, cbY, `Y = ${Y}, cbY = ${cbY}`);
+        assert.equal(iters, cbIter);
+
+        let count = 0;
+        let hash = 0;
+        for(let ii = 0; ii < X * Y; ii ++) {
+            const c = mem[ii + ((cbIter % 2 == 1)? (X * Y) : 0)] === 1;
+            if (c) {
+                count ++;
+                hash = hash ^ Math.imul(ii, 179424673);
+                // console.log(ii, hash);
+            }
+        }
+
+        assert.equal(count, cbCount, `iter = ${cbIter}, count = ${count}, cbCount = ${cbCount}`);
+        assert.equal(hash, cbHash, `iter = ${cbIter}, hash = ${hash}, cbHash = ${cbHash}`);
+
+        iters ++;
         return 0;
     }
 
     const life_run = (await WebAssembly.instantiate(wasm_bytes,  {js: { mem: memory, log: wasm_log, callback: callback }})).instance.exports.run;
 
-    const mem = new Uint32Array(memory.buffer);
     for (let ii = 0; ii < X * Y; ii++)
         mem[ii] = start[ii];
+
     const res = life_run(X, Y, 100);
-    //console.log("wasm_run returned after", res, "iterations");
-    if (res !== 100) {
-        console.error("FAILED: returned", res, "(expected 100");
-        process.exit(1);
-    }
+
+    assert.equal(res, 100);
+    assert.equal(iters, 101);
+
     const expected = `
 ..........
 ..x.......
