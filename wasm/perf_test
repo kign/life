@@ -6,6 +6,10 @@ const path = require('path');
 
 const defaults = {density: 0.3, iterations: 1000};
 
+// current about-the-best result on copernicus (MB Pro late 2019, 2.4 GHz i5)
+// (line counting included)
+// [1200x1600] Computed 1000 iterations in 11.232 seconds @ 89.03 fps
+
 const args = require('yargs')
     .usage('Usage: $0 [options] WIDTHxHEIGHT')
     .version('0.1')
@@ -30,7 +34,6 @@ const args = require('yargs')
     .demandCommand(1, 1)
     .strict()
     .argv;
-
 
 async function main () {
 	if (args.seed === undefined)
@@ -59,7 +62,7 @@ async function main () {
 	args.seed = Math.floor(args.seed)
 	args.iterations = Math.floor(args.iterations)
 
-	console.log("args =", args);
+	// console.log("args =", args);
 	const m = args._[0].match(/^(\d+)x(\d+)$/i);
 	if (!m) {
 		console.error(`Invalid dimension ${args._[0]}, should be WIDTHxHEIGHT, e.g. 1200x1600`);
@@ -69,12 +72,17 @@ async function main () {
 	const X = parseInt(m[1]);
 	const Y = parseInt(m[2]);
 
-    const wasm_bytes = new Uint8Array(fs.readFileSync(path.resolve(__dirname,'../docs/life.wasm')));
+    const life_wasm = path.resolve(__dirname, '../docs/life.wasm');
+    console.log("File", 'life.wasm', "last changed",
+        fs.statSync(life_wasm).mtime.toLocaleString('UK'), "local time");
+    const wasm_bytes = new Uint8Array(fs.readFileSync(life_wasm));
+
     const wasm_log = (a, b) => console.log(`wasm[${a}] ${b}`);
     const pages = 2 * Math.ceil(X * Y / 16000);
     const memory = new WebAssembly.Memory({initial: pages,maximum: pages});
 
-    const callback = function(X, Y, iter, hash) {
+    const callback = function(X, Y, iter, count, hash) {
+    	//console.log(count);
         return 0;
     }
 
