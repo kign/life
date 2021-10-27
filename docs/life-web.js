@@ -327,7 +327,7 @@ const LifeControls = (function () {
             update_gen(1);
         },
 
-        callback: function(X, Y, iter, hash) {
+        callback: function(X, Y, iter, cnt, hash) {
             // console.log("Callback", X, Y, iter, hash);
             last_hash = hash;
             last_iter = iter;
