@@ -99,7 +99,7 @@ class NativeRun(Common) :
         return self.life_run(self.X, self.Y, 1, self.iters, self.Fin, self.Fout,
                 callback if use_callback else None)
 
-class CWasmtime(Common) :
+class WasmtimeRun(Common) :
     speed = 2.0
 
     def __init__(self, X, Y, iters, density) :
@@ -134,25 +134,38 @@ class CWasmtime(Common) :
     def run(self, use_callback) :
         return self.life_run(self.store, self.X, self.Y, self.iters)
 
-class CWasmer(Common) :
+class WasmerRun(Common) :
     speed = 1.5
 
     def __init__(self, X, Y, iters, density) :
-        from wasmer import engine, Store, Module, Instance, Memory, MemoryType, Function, FunctionType, Type
+        from wasmer import engine, Store, Module, Instance, Memory, MemoryType, \
+                Function, FunctionType, Type, ImportObject
         from wasmer_compiler_llvm import Compiler
 
         super().__init__(X, Y, iters)
 
-        self.store = Store(engine.Native(Compiler))
-        #  store = Store(engine.JIT(Compiler))
+        store = Store(engine.Native(Compiler))
+        # store = Store(engine.JIT(Compiler))
 
-        module = Module(self.store, open(self.getWasmPath(), 'rb').read())
+        module = Module(store, open(self.getWasmPath(), 'rb').read())
 
         pages = 2 * (X * Y // 16000 + 1)  # probbaly need to divide by 16384 but OK
-        mem = Memory(self.store, MemoryType(shared = False, minimum = pages, maximum = pages))
 
-        for idx in range(X * Y) :
-            mem.data_ptr(self.store)[4 * idx] = 1 if random.random() < density else 0
+        # *** NOTE *** NOTE *** NOTE *** NOTE *** NOTE ***
+        # wasmer currently doesn't seem to work properly with import memory
+        # (created on the host, imported by WASM)
+        # Likely a bug; when fixed, can re-enable code below
+        # For now however, have to deal with exported memory (see below)
+
+        wasmer_supports_imported_memory = False
+        if wasmer_supports_imported_memory :
+            mem = Memory(self.store, MemoryType(shared = False, minimum = pages, maximum = pages))
+
+            mem = Memory(store, MemoryType(shared = False, minimum = pages))
+
+            mem_view = mem.uint32_view()
+            for idx in range(X * Y) :
+                mem_view[idx] = 1 if random.random() < density else 0
 
         def log(param1, param2) :
             print(f"[{param1}] {param2}")
@@ -161,15 +174,33 @@ class CWasmer(Common) :
             self.dens_a[liter - 1] = count / X / Y
             return 0
 
-        log_obj = Function(self.store, log, FunctionType(params=[Type.I32, Type.I32], results=[]))
-        callback_obj = Function(self.store, callback,
+        import_object = ImportObject()
+        import_object.register("js", {
+            # "mem" : mem,
+            "log" : Function(store, log, FunctionType(params=[Type.I32, Type.I32], results=[])),
+            "callback" : Function(store, callback,
             FunctionType(params=[Type.I32, Type.I32, Type.I32, Type.I32, Type.I32], results=[Type.I32]))
+            })
 
-        instance = Instance(module, [log_obj, callback_obj, mem])
+        if wasmer_supports_imported_memory :
+            import_object.register("js", {"mem" : mem})
+
+        instance = Instance(module, import_object)
+
+        if not wasmer_supports_imported_memory :
+            mem = instance.exports.emem
+            mem.grow(pages - 1)
+
+            mem_view = mem.uint32_view()
+            for idx in range(X * Y) :
+                mem_view[idx] = 1 if random.random() < density else 0
+
         self.life_run = instance.exports.run
 
+        print("Memory size is", mem.data_size, "bytes,", mem.size, "pages")
+
     def run(self, use_callback) :
-        return self.life_run(self.store, self.X, self.Y, self.iters)
+        return self.life_run(self.X, self.Y, self.iters)
 
 def main(args) :
     re_size = re.compile(r'^(\d+)[^0-9](\d+)$')
@@ -184,7 +215,7 @@ def main(args) :
             logging.error("Invalid values %s", size)
             exit(1)
 
-        engine = {'native' : NativeRun, 'wasmtime' : CWasmtime, 'wasmer' : CWasmer}[args.runtime]
+        engine = {'native' : NativeRun, 'wasmtime' : WasmtimeRun, 'wasmer' : WasmerRun}[args.runtime]
         runtime = engine(X, Y, args.iterations, args.density)
 
         estimate = expected_speed * args.iterations * X * Y * engine.speed
