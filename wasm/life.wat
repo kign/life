@@ -3,6 +3,9 @@
 	;; callback(X, Y, iteration, count, hash); return 0 = continue, 1 = stop
 	(import "js" "callback" (func $callback (param i32) (param i32) (param i32) (param i32) (param i32) (result i32)))
     (memory (import "js" "mem") 1)
+;; ~~~ wasmer ~~~
+;;    (memory (export "emem") 1)
+
     ;; width, height, n_iters -> [actual number of iterations]
     (func (export "run") (param $X i32) (param $Y i32) (param $reqiter i32) (result i32)
     	(local $ii i32)
@@ -136,6 +139,21 @@
     		(if (i32.eqz (i32.rem_s (get_local $iter) (i32.const 2)))
     			(then (set_local $src (get_local $XY)) (set_local $dst (i32.const 0)))
     			(else (set_local $dst (get_local $XY)) (set_local $src (i32.const 0))))
+
+	    	;; ~~~ wasmer ~~~
+	    	(;
+	    	(set_local $ii (i32.mul (get_local $XY) (i32.const 4))) ;; $ii := $XY * 4
+	    	(set_local $idst (i32.mul (get_local $dst) (i32.const 4))) ;; $idst := $dst * 4
+
+	    	(loop $fill
+	    		(set_local $ii (i32.sub (get_local $ii) (i32.const 4))) ;; $ii -= 4
+
+	    		;; mem[$idst + $ii] := 0
+	    		(i32.store (i32.add (get_local $idst) (get_local $ii)) (i32.const 0))
+
+	    		;; continue if $ii > 0
+	    		(br_if $fill (i32.gt_s (get_local $ii) (i32.const 0))))
+			;)
 
     		(memory.fill (i32.mul (i32.const 4) (get_local $dst)) (i32.const 0) (i32.mul (i32.const 4) (get_local $XY)))
 
