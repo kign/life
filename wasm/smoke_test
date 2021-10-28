@@ -76,7 +76,7 @@ async function main() {
 
     const res = life_run(X, Y, 100);
 
-    assert.equal(res, 100);
+    assert.equal(res, 100, `life_run() returned ${res}`);
     assert.equal(iters, 101);
 
     const expected = `
