@@ -4,7 +4,11 @@
 const fs = require('fs');
 const path = require('path');
 
-const defaults = {density: 0.3, iterations: 1000};
+const defaults = {
+	density: 0.3,
+	iterations: 1000,
+	wasm: path.resolve(__dirname, '../docs/life.wasm')
+};
 
 // current about-the-best result on copernicus (MB Pro late 2019, 2.4 GHz i5)
 // (line counting included)
@@ -30,6 +34,11 @@ const args = require('yargs')
     	alias: 'i',
     	describe: 'Number of iterations',
     	default: defaults.iterations
+    })
+    .option('wasm', {
+    	type: 'string',
+    	describe: 'life.wasm file to use',
+    	default: defaults.wasm
     })
     .demandCommand(1, 1)
     .strict()
@@ -72,8 +81,8 @@ async function main () {
 	const X = parseInt(m[1]);
 	const Y = parseInt(m[2]);
 
-    const life_wasm = path.resolve(__dirname, '../docs/life.wasm');
-    console.log("File", 'life.wasm', "last changed",
+    const life_wasm = args.wasm;
+    console.log("File", life_wasm, "last changed",
         fs.statSync(life_wasm).mtime.toLocaleString('UK'), "local time");
     const wasm_bytes = new Uint8Array(fs.readFileSync(life_wasm));
 

@@ -7,7 +7,7 @@ from inetlab.cli.colorterm import add_coloring_to_emit_ansi
 # perf_test.py 1200x1600 --density-graph
 # [1200x1600] Computed 1000 iterations in 9.020 seconds @ 110.864 fps
 
-# perf_test.py -s 12345 -i 1000 c 1200x1600
+# perf_test.py -s 12345 -i 1000 native 1200x1600
 # [1200x1600] Computed 1000 iterations in 8.552 seconds @ 116.932 fps
 # perf_test.py -s 12345 -i 1000 wasm 1200x1600
 # Computed 1000 iterations in 17.682 seconds @ 56.555 fps
@@ -18,6 +18,7 @@ def get_args () :
     default_log_level = "debug"
     default_density = 0.3
     default_iterations = 1_000
+    default_wasm = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'docs', 'life.wasm'))
 
     parser = argparse.ArgumentParser(description="Performance/density testing of Life")
     parser.add_argument('--log', dest='log_level', help="Logging level (default = %s)" % default_log_level,
@@ -29,6 +30,9 @@ def get_args () :
         default=default_density)
     parser.add_argument('-s', '--seed',
         help="Seed for randomized board generation (if omitted results will be different every time)")
+    parser.add_argument('--wasm',
+        help=f"Location of WASM file (default = {default_wasm})",
+        default=default_wasm)
     parser.add_argument('-i', '--iterations', type=int,
         help=f"Number of iterations (default = {default_iterations})",
         default=default_iterations)
@@ -61,27 +65,25 @@ def get_args () :
     return args
 
 class Common :
-    def __init__(self, X, Y, iters) :
+    def __init__(self, wasm, X, Y, iters) :
         self.X = X
         self.Y = Y
         self.iters = iters
         self.dens_a = [None] * iters
+        self.wasm = wasm
 
-    @staticmethod
-    def getWasmPath() :
-        fname = 'life.wasm'
-        fpath = os.path.join(os.path.dirname(os.path.realpath(__file__)),'..', 'docs', fname)
-        print("File", fname, "last modified",
-            datetime.fromtimestamp(os.path.getmtime(fpath)).strftime('%Y-%m-%d %H:%M:%S'))
-        return fpath
+    def getWasmPath(self) :
+        print("File", self.wasm, "last modified",
+            datetime.fromtimestamp(os.path.getmtime(self.wasm)).strftime('%Y-%m-%d %H:%M:%S'))
+        return self.wasm
 
 class NativeRun(Common) :
     speed = 1.0
 
-    def __init__(self, X, Y, iters, density) :
+    def __init__(self, wasm, X, Y, iters, density) :
         import conway_life
 
-        super().__init__(X, Y, iters)
+        super().__init__(wasm, X, Y, iters)
 
         self.Fin = [False] * X * Y
         self.Fout = [False] * X * Y
@@ -102,10 +104,10 @@ class NativeRun(Common) :
 class WasmtimeRun(Common) :
     speed = 2.0
 
-    def __init__(self, X, Y, iters, density) :
+    def __init__(self, wasm, X, Y, iters, density) :
         from wasmtime import Store, Module, Instance, Func, FuncType, ValType, \
                 Memory, MemoryType, Limits
-        super().__init__(X, Y, iters)
+        super().__init__(wasm, X, Y, iters)
 
         self.store = Store()
 
@@ -137,12 +139,12 @@ class WasmtimeRun(Common) :
 class WasmerRun(Common) :
     speed = 1.5
 
-    def __init__(self, X, Y, iters, density) :
+    def __init__(self, wasm, X, Y, iters, density) :
         from wasmer import engine, Store, Module, Instance, Memory, MemoryType, \
                 Function, FunctionType, Type, ImportObject
         from wasmer_compiler_llvm import Compiler
 
-        super().__init__(X, Y, iters)
+        super().__init__(wasm, X, Y, iters)
 
         store = Store(engine.Native(Compiler))
         # store = Store(engine.JIT(Compiler))
@@ -216,7 +218,7 @@ def main(args) :
             exit(1)
 
         engine = {'native' : NativeRun, 'wasmtime' : WasmtimeRun, 'wasmer' : WasmerRun}[args.runtime]
-        runtime = engine(X, Y, args.iterations, args.density)
+        runtime = engine(args.wasm, X, Y, args.iterations, args.density)
 
         estimate = expected_speed * args.iterations * X * Y * engine.speed
         if estimate > 5 :

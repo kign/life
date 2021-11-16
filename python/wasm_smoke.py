@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 import sys, os.path
+from datetime import datetime
 from wasmtime import Store, Module, Instance, Func, FuncType, ValType, \
         Memory, MemoryType, Limits
 import lifeutils
@@ -7,16 +8,21 @@ import lifeutils
 def test () :
     store = Store()
 
-    module = Module.from_file(store.engine,
-            os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                '..', 'docs', 'life.wasm'))
+    if len(sys.argv) >= 2 :
+        life_wasm = sys.argv[1]
+    else :
+        life_wasm = os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'docs', 'life.wasm'))
+
+    print("WASM file :", life_wasm)
+    print("Last modi :", datetime.fromtimestamp(os.path.getmtime('lifeutils.py')).strftime("%Y-%m-%d %H:%M:%S"))
+    module = Module.from_file(store.engine, life_wasm)
     mem = Memory(store, MemoryType(Limits(5, 5)))
 
     def log(param1, param2) :
         print(f"[{param1}] {param2}")
 
-    p_cnt = [1]  # unline conway-life, we don't invoke callback before 1-st iteration
-    def callback(X, Y, liter, hash) :
+    p_cnt = [1]  # unlike conway-life, we don't invoke callback before 1-st iteration
+    def callback(X, Y, liter, cnt, hash) :
         assert p_cnt[0] == liter, f"cnt = {p_cnt[0]}, liter = {liter}"
         p_cnt[0] += 1
 
@@ -45,7 +51,7 @@ x.x.......
 
     log_obj = Func(store, FuncType([ValType.i32(), ValType.i32()], []), log)
     callback_obj = Func(store,
-        FuncType([ValType.i32(), ValType.i32(), ValType.i32(), ValType.i32()],
+        FuncType([ValType.i32(), ValType.i32(), ValType.i32(), ValType.i32(), ValType.i32()],
             [ValType.i32()]), callback)
 
     instance = Instance(store, module, [log_obj, callback_obj, mem])
