@@ -79,12 +79,12 @@
     (local $ind i32)
     (set_local $cnt (i32.const 0))
     (set_local $hash (i32.const 0))
-    (set_local $p (i32.sub (get_local $cells) (i32.mul (i32.const 1) (i32.const 4))))
+    (set_local $p (i32.sub (get_local $cells) (i32.const 4)))
     (set_local $ind (i32.const -1))
     (memory.fill (get_local $cellsnew) (i32.const 0) (i32.mul (i32.mul (get_local $X) (get_local $Y)) (i32.const 4)))
     (loop $@block_1_continue
       (loop $@block_1_1_continue
-        (set_local $p (i32.add (get_local $p) (i32.mul (i32.const 1) (i32.const 4))))
+        (set_local $p (i32.add (get_local $p) (i32.const 4)))
         (set_local $ind (i32.add (get_local $ind) (i32.const 1)))
         (if (i32.eq (get_local $ind) (i32.mul (get_local $X) (get_local $Y)))
           (then
@@ -106,12 +106,12 @@
           (set_local $n22 (i32.add (get_local $n21) (i32.const 1))))
         (else
           (set_local $n00 (i32.add (i32.mul (get_local $X) (i32.rem_s (i32.add (i32.add (get_local $y) (i32.const -1)) (get_local $Y)) (get_local $Y))) (i32.rem_s (i32.add (i32.add (get_local $x) (i32.const -1)) (get_local $X)) (get_local $X))))
-          (set_local $n01 (i32.add (i32.mul (get_local $X) (i32.rem_s (i32.add (i32.add (get_local $y) (i32.const -1)) (get_local $Y)) (get_local $Y))) (i32.rem_s (i32.add (i32.add (get_local $x) (i32.const 0)) (get_local $X)) (get_local $X))))
+          (set_local $n01 (i32.add (i32.mul (get_local $X) (i32.rem_s (i32.add (i32.add (get_local $y) (i32.const -1)) (get_local $Y)) (get_local $Y))) (i32.rem_s (i32.add (get_local $x) (get_local $X)) (get_local $X))))
           (set_local $n02 (i32.add (i32.mul (get_local $X) (i32.rem_s (i32.add (i32.add (get_local $y) (i32.const -1)) (get_local $Y)) (get_local $Y))) (i32.rem_s (i32.add (i32.add (get_local $x) (i32.const 1)) (get_local $X)) (get_local $X))))
-          (set_local $n10 (i32.add (i32.mul (get_local $X) (i32.rem_s (i32.add (i32.add (get_local $y) (i32.const 0)) (get_local $Y)) (get_local $Y))) (i32.rem_s (i32.add (i32.add (get_local $x) (i32.const -1)) (get_local $X)) (get_local $X))))
-          (set_local $n12 (i32.add (i32.mul (get_local $X) (i32.rem_s (i32.add (i32.add (get_local $y) (i32.const 0)) (get_local $Y)) (get_local $Y))) (i32.rem_s (i32.add (i32.add (get_local $x) (i32.const 1)) (get_local $X)) (get_local $X))))
+          (set_local $n10 (i32.add (i32.mul (get_local $X) (i32.rem_s (i32.add (get_local $y) (get_local $Y)) (get_local $Y))) (i32.rem_s (i32.add (i32.add (get_local $x) (i32.const -1)) (get_local $X)) (get_local $X))))
+          (set_local $n12 (i32.add (i32.mul (get_local $X) (i32.rem_s (i32.add (get_local $y) (get_local $Y)) (get_local $Y))) (i32.rem_s (i32.add (i32.add (get_local $x) (i32.const 1)) (get_local $X)) (get_local $X))))
           (set_local $n20 (i32.add (i32.mul (get_local $X) (i32.rem_s (i32.add (i32.add (get_local $y) (i32.const 1)) (get_local $Y)) (get_local $Y))) (i32.rem_s (i32.add (i32.add (get_local $x) (i32.const -1)) (get_local $X)) (get_local $X))))
-          (set_local $n21 (i32.add (i32.mul (get_local $X) (i32.rem_s (i32.add (i32.add (get_local $y) (i32.const 1)) (get_local $Y)) (get_local $Y))) (i32.rem_s (i32.add (i32.add (get_local $x) (i32.const 0)) (get_local $X)) (get_local $X))))
+          (set_local $n21 (i32.add (i32.mul (get_local $X) (i32.rem_s (i32.add (i32.add (get_local $y) (i32.const 1)) (get_local $Y)) (get_local $Y))) (i32.rem_s (i32.add (get_local $x) (get_local $X)) (get_local $X))))
           (set_local $n22 (i32.add (i32.mul (get_local $X) (i32.rem_s (i32.add (i32.add (get_local $y) (i32.const 1)) (get_local $Y)) (get_local $Y))) (i32.rem_s (i32.add (i32.add (get_local $x) (i32.const 1)) (get_local $X)) (get_local $X))))))
       (set_local $v00 (i32.eq (i32.const 1) (i32.load (i32.add (get_local $cells) (i32.mul (get_local $n00) (i32.const 4))))))
       (set_local $v01 (i32.eq (i32.const 1) (i32.load (i32.add (get_local $cells) (i32.mul (get_local $n01) (i32.const 4))))))
@@ -178,12 +178,7 @@
         (if (i32.eq (i32.const 1) (call $callback (get_local $X) (get_local $Y) (i32.add (get_local $i) (i32.const 1)) (global.get $g_count) (global.get $g_hash)))
           (then
             (return (i32.add (get_local $i) (i32.const 1)))))
-        (if (block $@block_1_1_break (result i32)
-            (drop (br_if $@block_1_1_break (i32.const 1) (i32.eq (global.get $g_hash) (get_local $hash_1))))
-            (drop (br_if $@block_1_1_break (i32.const 1) (i32.eq (global.get $g_hash) (get_local $hash_2))))
-            (drop (br_if $@block_1_1_break (i32.const 1) (i32.eq (global.get $g_hash) (get_local $hash_3))))
-            (drop (br_if $@block_1_1_break (i32.const 1) (i32.eq (global.get $g_hash) (get_local $hash_4))))
-            (i32.const 0))
+        (if (block $@block_1_1_break (result i32) (drop (br_if $@block_1_1_break (i32.const 1) (i32.eq (global.get $g_hash) (get_local $hash_1)))) (drop (br_if $@block_1_1_break (i32.const 1) (i32.eq (global.get $g_hash) (get_local $hash_2)))) (drop (br_if $@block_1_1_break (i32.const 1) (i32.eq (global.get $g_hash) (get_local $hash_3)))) (drop (br_if $@block_1_1_break (i32.const 1) (i32.eq (global.get $g_hash) (get_local $hash_4)))) (i32.const 0))
           (then
             (return (i32.add (get_local $i) (i32.const 1)))))
         (set_local $hash_1 (get_local $hash_2))
@@ -192,4 +187,4 @@
         (set_local $hash_4 (global.get $g_hash))
         (set_local $i (i32.add (get_local $i) (i32.const 1)))
         (br $@block_1_continue)))
-    (return (get_local $N))))
+    (get_local $N)))

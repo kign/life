@@ -1,5 +1,10 @@
-// c4wa-compile -P -Xmodule.memoryStatus=import:mem -Xmodule.importName=js -Xmodule.dataOffset=0 -Xmodule.dataLength=0 life-wasm.c -o life-wasm.wat
+// Compiling with imported memory:
+// c4wa-compile -P -Xmodule.memoryStatus=import:mem -Xmodule.importName=js -Xmodule.dataSize=0 -Xmodule.stackSize=0 life-wasm.c -o life-wasm.wat
 // wat2wasm --enable-bulk-memory  life-wasm.wat
+
+// special mode for wasmer compatibility (exported memory, no bulk mem funcs)
+// c4wa-compile -P -DNO_BULK_MEM -Xmodule.memoryStatus=export:emem -Xmodule.importName=js -Xmodule.dataSize=0 -Xmodule.stackSize=0 life-wasm.c -o life-wasmer.wat
+// wat2wasm life-wasmer.wat
 
 #define cell_t int
 
@@ -47,7 +52,16 @@ void life_step (
     cell_t               * p = cells - 1;
     int                  ind = -1;
 
+#ifdef NO_BULK_MEM
+    p = cellsnew;
+    for(x = 0; x < X*Y; x ++) {
+        *p = 0;
+        p ++;
+    }
+    p = cells - 1;
+#else
     memset ( (char *)cellsnew, (char)0, X * Y * sizeof(cell_t) );
+#endif
 
     /* Assuming there could be many empty cells, optimize looping the
      * best we can */
