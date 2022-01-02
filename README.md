@@ -1,4 +1,4 @@
-# Convay's Game of Life
+# Conway's Game of Life
 
 This repository is a collection of semi-independent modules related to the implementation of [Game of life]().
 
